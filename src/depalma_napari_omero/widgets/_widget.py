@@ -683,7 +683,7 @@ class OMEROWidget(QWidget):
                 raise RuntimeError("Tumor model selection required.")
             for _ in self.project._run_batch_nnunet(tumor_model, pred_missing_ctx):
                 continue
-
+        
         if len(self.view.cases) > 0:
             for _ in self.project._run_batch_tracking(self.view.cases):
                 continue

@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import List, Optional, Union
 
-import numpy as np
 import pandas as pd
 import skimage.io
 from mousetumorpy import (
@@ -219,6 +218,10 @@ class OmeroProjectManager:
                 if pd.isna(ctx.tumor_series).sum() > 0:
                     print(f"⚠️ Tumor series IDs has NaN values; tumors weren't computed in all scans? Skipping tracking for this case: {specimen}...")
                     continue
+                
+                # Skip if we don't have the lungs series
+                if ctx.n_lungs == 0:
+                    print("⚠️ The lungs series for this case were not found, or do not exist. Skipping tracking for this case: {specimen}...")
 
                 _compute_tracking(
                     image_id=ctx.roi_series[0],  # Destination image is the first ROI
