@@ -8,7 +8,7 @@ import geojson
 import numpy as np
 import pandas as pd
 import pooch
-from aicsimageio.writers.ome_tiff_writer import OmeTiffWriter
+import tifffile
 from ezomero.rois import Polygon
 from omero.gateway import (
     BlitzGateway,
@@ -179,7 +179,13 @@ class OmeroClient:
             file_name = Path(temp_file.name).with_name(
                 f"{Path(image_name).stem}.ome.tif"
             )
-            OmeTiffWriter.save(image, file_name, dim_order="ZYX")
+            
+            tifffile.imwrite(
+                file_name,
+                image,
+                ome=True,
+                metadata={"axes": "ZYX"},
+            )
 
         temp_file.close()
 
