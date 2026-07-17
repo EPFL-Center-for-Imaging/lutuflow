@@ -4,12 +4,10 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 import ezomero
-import geojson
 import numpy as np
 import pandas as pd
 import pooch
 import tifffile
-from ezomero.rois import Polygon
 from omero.gateway import (
     BlitzGateway,
     FileAnnotationWrapper,
@@ -19,10 +17,6 @@ from omero.gateway import (
     _ImageWrapper,
     _RoiWrapper,
 )
-from skimage.exposure import rescale_intensity
-
-from imaging_server_kit.types._mask import mask2features, features2instance_mask_3d
-
 from depalma_napari_omero.omero_client.omero_config import OmeroConfig
 
 
@@ -246,12 +240,6 @@ class OmeroClient:
         return ezomero.get_shape_ids(self.conn, roi_id=roi_id)  # type: ignore
 
     @require_active_conn
-    def attach_table_to_image(
-        self, table: pd.DataFrame, image_id: int, table_title: str = "Tracking results"
-    ) -> int:
-        return ezomero.post_table(self.conn, table, "Image", image_id, table_title)  # type: ignore
-
-    @require_active_conn
     def post_dataset(self, project_id: int, dataset_name: str) -> int:
         dataset_id = ezomero.post_dataset(self.conn, dataset_name, project_id)  # type: ignore
         if dataset_id is not None:
@@ -284,63 +272,6 @@ class OmeroClient:
     @require_active_conn
     def post_roi(self, image_id: int, shapes: List) -> int:
         return ezomero.post_roi(self.conn, image_id, shapes)  # type: ignore
-
-    @require_active_conn
-    def post_binary_mask_as_roi(self, image_id: int, mask: np.ndarray) -> int:
-        mask = rescale_intensity(mask, out_range=(0, 1)).astype(np.uint8)  # type: ignore
-
-        all_rois = []
-        for z_idx, lung_slice in enumerate(mask):
-            polygons = mask2features(lung_slice)
-            for polygon in polygons:
-                points = polygon["geometry"]["coordinates"][0]
-                points_ezomero = [(x, y) for x, y in points]
-                roi = Polygon(points=points_ezomero, z=z_idx)
-                all_rois.append(roi)
-
-        roi_id = self.post_roi(image_id, all_rois)
-
-        return roi_id
-
-    @require_active_conn
-    def download_binary_mask_from_image_rois(self, image_id) -> np.ndarray:
-        all_roi_ids = self.get_image_rois(image_id)
-        image = self.get_image(image_id)
-
-        # Workaround - For images that were not imported as OME-TIFF, the Z dimension is interpreted as T
-        size_z = image.getSizeZ()
-        if size_z == 1:
-            size_z = image.getSizeT()
-
-        img_shape = (
-            size_z,
-            image.getSizeY(),
-            image.getSizeX(),
-        )
-
-        features = []
-        for detection_id, roi_id in enumerate(all_roi_ids, start=1):
-            roi_shape_ids = self.get_roi_shapes(roi_id=roi_id)
-            for shape_id in roi_shape_ids:  # Different Z
-                geometry = self.get_shape(shape_id=shape_id)
-                z_idx = geometry.z
-                coords = geometry.points  # List of tuples (x, y)
-                coords = np.array(coords)
-                coords = np.vstack([coords, coords[0]])  # Close the polygon for QuPath
-                geom = geojson.Polygon(coordinates=[coords.tolist()])
-                feature = geojson.Feature(
-                    geometry=geom,
-                    properties={
-                        "Detection ID": detection_id,
-                        "Class": 1,
-                        "z_idx": z_idx,
-                    },
-                )
-                features.append(feature)
-
-        mask = features2instance_mask_3d(features, img_shape)
-
-        return mask
 
     @require_active_conn
     def create_tag(self, project_id: int, tag: str) -> int:

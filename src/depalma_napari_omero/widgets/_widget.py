@@ -3,13 +3,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
-from mousetumorpy import (
-    NNUNET_MODELS,
-    YOLO_MODELS,
-    combine_images,
-    generate_tracked_tumors,
-    to_linkage_df,
-)
+from mousetumorpy import NNUNET_MODELS, combine_images
 import napari
 from napari.layers import Image, Labels
 from napari.qt.threading import thread_worker
@@ -115,20 +109,13 @@ class OMEROWidget(QWidget):
 
         # Project (experiment)
         self.cb_project = QComboBox()
-        self.cb_project.currentTextChanged.connect(self._on_project_change) # type: ignore
+        self.cb_project.currentTextChanged.connect(self._on_project_change)  # type: ignore
         experiment_layout.addWidget(self.cb_project, 0, 0, 1, 2)
 
         # Rescan
         self.btn_rescan = QPushButton("Rescan", self)
-        self.btn_rescan.clicked.connect(self._reset_ui_and_update_project) # type: ignore
+        self.btn_rescan.clicked.connect(self._reset_ui_and_update_project)  # type: ignore
         experiment_layout.addWidget(self.btn_rescan, 0, 2)
-
-        # Lungs model
-        self.cb_lungs_models = QComboBox()
-        for lungs_model_name in reversed(YOLO_MODELS.keys()):
-            self.cb_lungs_models.addItem(lungs_model_name, lungs_model_name)
-        experiment_layout.addWidget(QLabel("Lungs model", self), 1, 0)
-        experiment_layout.addWidget(self.cb_lungs_models, 1, 1, 1, 2)
 
         # Tumor model
         self.cb_tumor_models = QComboBox()
@@ -139,28 +126,17 @@ class OMEROWidget(QWidget):
 
         # Run workflows
         self.btn_run_workflows = QPushButton("🔁 Run all workflows", self)
-        self.btn_run_workflows.clicked.connect(self._run_all_workflows) # type: ignore
+        self.btn_run_workflows.clicked.connect(self._run_all_workflows)  # type: ignore
         experiment_layout.addWidget(self.btn_run_workflows, 3, 0, 1, 3)
-        
-        
-        # Tracking workflow
-        self.btn_run_tracking_workflow = QPushButton("🔁 Run tracking workflow", self)
-        self.btn_run_tracking_workflow.clicked.connect(self._run_tracking_workflow) # type: ignore
-        
-        track_layout = QGridLayout()
-        track_layout.setContentsMargins(10, 10, 10, 10)
-        track_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # type: ignore
-        track_layout.addWidget(self.btn_run_tracking_workflow, 0, 0)
-
 
         # Upload new scans
         self.btn_upload_scans = QPushButton("⬆️ Upload new scans", self)
-        self.btn_upload_scans.clicked.connect(self._upload_new_scans) # type: ignore
+        self.btn_upload_scans.clicked.connect(self._upload_new_scans)  # type: ignore
         experiment_layout.addWidget(self.btn_upload_scans, 4, 0, 1, 3)
 
         # Download experiment
         self.btn_download_experiments = QPushButton("⬇️ Download project", self)
-        self.btn_download_experiments.clicked.connect(self._download_experiment) # type: ignore
+        self.btn_download_experiments.clicked.connect(self._download_experiment)
         experiment_layout.addWidget(self.btn_download_experiments, 5, 0, 1, 3)
 
         # Scan data group
@@ -172,7 +148,7 @@ class OMEROWidget(QWidget):
 
         # Specimens
         self.cb_specimen = QComboBox()
-        self.cb_specimen.currentTextChanged.connect(self._on_specimen_change) # type: ignore
+        self.cb_specimen.currentTextChanged.connect(self._on_specimen_change)
         scan_data_layout.addWidget(QLabel("Case", self), 0, 0)
         scan_data_layout.addWidget(self.cb_specimen, 0, 1)
 
@@ -189,7 +165,7 @@ class OMEROWidget(QWidget):
 
         # Download button
         btn_download = QPushButton("⏬ Download", self)
-        btn_download.clicked.connect(self._download_selected) # type: ignore
+        btn_download.clicked.connect(self._download_selected)
         scan_data_layout.addWidget(btn_download, 3, 0, 1, 2)
 
         # Upload layer input
@@ -199,10 +175,10 @@ class OMEROWidget(QWidget):
 
         # Upload button
         btn_upload_corrections = QPushButton("⏫ Upload", self)
-        btn_upload_corrections.clicked.connect(self._upload_corrections) # type: ignore
+        btn_upload_corrections.clicked.connect(self._upload_corrections)
         scan_data_layout.addWidget(btn_upload_corrections, 5, 0, 1, 2)
 
-        # Tracking group
+        # Time series group
         self.timeseries_group = QCollapsibleGroupBox("Time series")  # type: ignore
         self.timeseries_group.setChecked(False)
         self.timeseries_group.toggled.connect(self.on_groupbox_toggled)
@@ -216,28 +192,14 @@ class OMEROWidget(QWidget):
         # Download ROIs timeseries
         timeseries_layout.addWidget(QLabel("Image series", self), 1, 0)
         self.btn_download_roi_series = QPushButton("⏬ (-)", self)
-        self.btn_download_roi_series.clicked.connect(self._download_ts_rois) # type: ignore
+        self.btn_download_roi_series.clicked.connect(self._download_ts_rois)
         timeseries_layout.addWidget(self.btn_download_roi_series, 1, 1, 1, 2)
 
-        # Download lungs timeseries
-        timeseries_layout.addWidget(QLabel("Lungs series", self), 2, 0)
-        self.btn_download_lungs_series = QPushButton("⏬ (-)", self)
-        self.btn_download_lungs_series.clicked.connect(self._download_ts_lungs) # type: ignore
-        timeseries_layout.addWidget(self.btn_download_lungs_series, 2, 1, 1, 2)
-
         # Download tumor series (untracked)
-        timeseries_layout.addWidget(QLabel("Tumor series (untracked)", self), 3, 0)
-        self.btn_download_untracked_tumors = QPushButton("⏬ (-)", self)
-        self.btn_download_untracked_tumors.clicked.connect(
-            self._download_untracked_tumors # type: ignore
-        )
-        timeseries_layout.addWidget(self.btn_download_untracked_tumors, 3, 1, 1, 2)
-
-        # Download tracked tumor timeseries
-        timeseries_layout.addWidget(QLabel("Tumor series (tracked)", self), 4, 0)
-        self.btn_download_tracked_tumors = QPushButton("⏬ (-)", self)
-        self.btn_download_tracked_tumors.clicked.connect(self._download_tracked_tumors) # type: ignore
-        timeseries_layout.addWidget(self.btn_download_tracked_tumors, 4, 1, 1, 2)
+        timeseries_layout.addWidget(QLabel("Tumor series", self), 3, 0)
+        self.btn_download_tumor_series = QPushButton("⏬ (-)", self)
+        self.btn_download_tumor_series.clicked.connect(self._download_ts_tumors)
+        timeseries_layout.addWidget(self.btn_download_tumor_series, 3, 1, 1, 2)
 
         ### Generic upload tab
         generic_upload_layout = QGridLayout()
@@ -253,14 +215,14 @@ class OMEROWidget(QWidget):
         generic_upload_layout.addWidget(QLabel("Files", self), 1, 0)
         generic_upload_layout.addWidget(self.cb_download_generic, 1, 1)
         btn_download_generic = QPushButton("⏬ Download", self)
-        btn_download_generic.clicked.connect(self._generic_download) # type: ignore
+        btn_download_generic.clicked.connect(self._generic_download)
         generic_upload_layout.addWidget(btn_download_generic, 1, 2)
 
         self.cb_upload_generic = QComboBox()
         generic_upload_layout.addWidget(QLabel("Layer", self), 2, 0)
         generic_upload_layout.addWidget(self.cb_upload_generic, 2, 1)
         btn_upload_generic = QPushButton("⏫ Upload", self)
-        btn_upload_generic.clicked.connect(self._generic_upload) # type: ignore
+        btn_upload_generic.clicked.connect(self._generic_upload)
         generic_upload_layout.addWidget(btn_upload_generic, 2, 2)
 
         ### Tabs
@@ -270,13 +232,10 @@ class OMEROWidget(QWidget):
         tab2.setLayout(select_layout)
         tab3 = QWidget(self)
         tab3.setLayout(generic_upload_layout)
-        tab4 = QWidget(self)
-        tab4.setLayout(track_layout)
         self.tabs = QTabWidget()
         self.tabs.addTab(tab1, "Login")
         self.tabs.addTab(tab2, "Data selection")
         self.tabs.addTab(tab3, "Download / Upload")
-        self.tabs.addTab(tab4, "Tracking")
         layout.addWidget(self.tabs)
 
         # Setup layer callbacks
@@ -287,7 +246,7 @@ class OMEROWidget(QWidget):
         self.viewer.layers.events.removed.connect(self._on_layer_change)
         self._on_layer_change(None)
 
-        self.worker_manager = WorkerManager(grayout_ui_list=[tab2, tab3, tab4])
+        self.worker_manager = WorkerManager(grayout_ui_list=[tab2, tab3])
 
         cancel_btn = self.worker_manager.cancel_btn
         layout.addWidget(cancel_btn)
@@ -390,11 +349,9 @@ class OMEROWidget(QWidget):
 
         # Update the UI
         self.btn_download_roi_series.setText(f"⏬ (-)")
-        self.btn_download_untracked_tumors.setText(f"⏬ (-)")
-        self.btn_download_lungs_series.setText(f"⏬ (-)")
-        self.btn_download_tracked_tumors.setText(f"⏬ (-)")
+        self.btn_download_tumor_series.setText(f"⏬ (-)")
         self.label_selected_case_value.setText("-")
-        
+
         self.cb_specimen.clear()
         self.cb_scan_time.clear()
         self.cb_dataset.clear()
@@ -417,22 +374,18 @@ class OMEROWidget(QWidget):
     def _on_specimen_change(self, specimen: str):
         if self.project is None:
             return
-        
+
         if specimen == "":
             return
 
-        specimen_ctx = self.project.get_specimen_context(specimen) # type: ignore
+        specimen_ctx = self.project.get_specimen_context(specimen)  # type: ignore
 
         # Update the UI
         self.cb_scan_time.clear()
         self.cb_scan_time.addItems(specimen_ctx.times)
         self.label_selected_case_value.setText(f"{specimen}")
         self.btn_download_roi_series.setText(f"⏬ {specimen_ctx.n_rois} scans")
-        self.btn_download_untracked_tumors.setText(f"⏬ {specimen_ctx.n_labels} scans")
-        # Lungs series
-        self.btn_download_lungs_series.setText(f"⏬ {specimen_ctx.n_lungs} scans")
-        # Tracked tumors
-        self.btn_download_tracked_tumors.setText(f"⏬ {specimen_ctx.n_tracked} scans")
+        self.btn_download_tumor_series.setText(f"⏬ {specimen_ctx.n_labels} scans")
 
     def _on_scan_time_change(self, selected_time: str):
         if selected_time == "":
@@ -451,7 +404,7 @@ class OMEROWidget(QWidget):
     def _download_worker(self, image_ctx: ImageContext):
         if self.project is None:
             return
-        
+
         if image_ctx.image_id is None:
             raise RuntimeError("ID required to download image.")
 
@@ -461,7 +414,7 @@ class OMEROWidget(QWidget):
     def _generic_download(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         if self.cb_download_generic.currentText() == "":
             return
 
@@ -475,15 +428,17 @@ class OMEROWidget(QWidget):
             image_name=image_name,
         )
 
-        show_info(f"Downloading Image ID={image_ctx.image_id} ({image_ctx.image_class})")
-        worker = self._download_worker(image_ctx) # type: ignore
+        show_info(
+            f"Downloading Image ID={image_ctx.image_id} ({image_ctx.image_class})"
+        )
+        worker = self._download_worker(image_ctx)  # type: ignore
         worker.returned.connect(self._download_selected_returned)
         self.worker_manager.add_active(worker)
 
     def _download_selected(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         image_class = self.cb_image.currentText()
         if image_class == "":
             return
@@ -509,7 +464,7 @@ class OMEROWidget(QWidget):
 
         show_info(f"Downloading Image ID={image_ctx.image_id}")
 
-        worker = self._download_worker(image_ctx) # type: ignore
+        worker = self._download_worker(image_ctx)  # type: ignore
         worker.returned.connect(self._download_selected_returned)
         self.worker_manager.add_active(worker)
 
@@ -553,7 +508,7 @@ class OMEROWidget(QWidget):
         """Handles uploading images to the OMERO server."""
         if self.project is None:
             return
-        
+
         layer_name = self.cb_upload.currentText()
         if layer_name == "":
             return
@@ -581,9 +536,9 @@ class OMEROWidget(QWidget):
             time_idx=float(time),
         )
         origin_ctx = self.view.complete(origin_ctx)
-        
+
         original_image_id = origin_ctx.image_id
-        
+
         upload_ctx = ImageContext(
             image_class="corrected_pred",
             project_id=self.project.id,
@@ -594,23 +549,25 @@ class OMEROWidget(QWidget):
             image=updated_data,
             original_image_id=original_image_id,
         )
-        
-        worker = self._upload_worker(upload_ctx) # type: ignore
+
+        worker = self._upload_worker(upload_ctx)  # type: ignore
         worker.returned.connect(self._upload_correction_returned)
         self.worker_manager.add_active(worker)
 
     def _upload_correction_returned(self, image_ctx: ImageContext):
         if self.project is None:
             return
-        
+
         if image_ctx.image_id is None:
             raise RuntimeError("Uploaded corrected image has no ID.")
-        
+
         if image_ctx.original_image_id is None:
             raise RuntimeError("Context needs an original image ID.")
 
-        self.project.handle_corrected_roi_uploaded(image_ctx.image_id, image_ctx.original_image_id)
-        
+        self.project.handle_corrected_roi_uploaded(
+            image_ctx.image_id, image_ctx.original_image_id
+        )
+
         self._upload_worker_returned(image_ctx)
         show_info(f"Uploaded image {image_ctx.image_id}.")
 
@@ -621,7 +578,7 @@ class OMEROWidget(QWidget):
     def _generic_upload(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         layer_name = self.cb_upload_generic.currentText()
         if layer_name == "":
             return
@@ -633,7 +590,7 @@ class OMEROWidget(QWidget):
 
         layer = self.viewer.layers[layer_name]
         if isinstance(layer, Labels):
-            layer_data: Optional[np.ndarray] = layer.data # type: ignore
+            layer_data: Optional[np.ndarray] = layer.data  # type: ignore
             if layer_data is None:
                 show_warning(f"No data found in the layer ({layer_name}).")
                 return
@@ -655,8 +612,8 @@ class OMEROWidget(QWidget):
             project_id=self.project.id,
         )
 
-        worker = self._upload_worker(image_ctx) # type: ignore
-        worker.returned.connect(self._upload_worker_returned) # type: ignore
+        worker = self._upload_worker(image_ctx)  # type: ignore
+        worker.returned.connect(self._upload_worker_returned)  # type: ignore
         self.worker_manager.add_active(worker)
 
     def _run_all_workflows(self, *args, **kwargs):
@@ -665,38 +622,25 @@ class OMEROWidget(QWidget):
 
         roi_missing_ctx: List[ImageContext] = self.view.roi_missing
 
-        lungs_model = self.cb_lungs_models.currentData()
         tumor_model = self.cb_tumor_models.currentData()
 
-        worker = self._workflow_worker(lungs_model, roi_missing_ctx, tumor_model) # type: ignore
+        worker = self._workflow_worker(roi_missing_ctx, tumor_model)  # type: ignore
 
         worker.returned.connect(self._reset_ui_and_update_project)
 
         self.worker_manager.add_active(worker)
-    
-    
-    def _run_tracking_workflow(self, *args, **kwargs):
-        worker = self._tracking_workflow_worker()
-
-        worker.returned.connect(self._reset_ui_and_update_project)
-
-        self.worker_manager.add_active(worker)
-        
 
     @thread_worker
     def _workflow_worker(
         self,
-        lungs_model: Optional[str],
         roi_missing_ctx: List[ImageContext],
         tumor_model: Optional[str],
     ):
         if self.project is None:
             return
-        
+
         if len(roi_missing_ctx) > 0:
-            if lungs_model is None:
-                raise RuntimeError("Lungs model seletion required.")
-            for _ in self.project._run_batch_roi(lungs_model, roi_missing_ctx):
+            for _ in self.project._run_batch_roi(roi_missing_ctx):
                 continue
 
         pred_missing_ctx: List[ImageContext] = self.view.pred_missing
@@ -706,52 +650,47 @@ class OMEROWidget(QWidget):
                 raise RuntimeError("Tumor model selection required.")
             for _ in self.project._run_batch_nnunet(tumor_model, pred_missing_ctx):
                 continue
-    
-    @thread_worker
-    def _tracking_workflow_worker(self):
-        if self.project is None:
-            return
-        
-        if len(self.view.cases) > 0:
-            for _ in self.project._run_batch_tracking(self.view.cases):
-                continue
 
     def _reset_ui_and_update_project(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         current_specimen_idx = self.cb_specimen.currentIndex()
         current_time_idx = self.cb_scan_time.currentIndex()
         current_dataset_idx = self.cb_dataset.currentIndex()
-        
+
         # Update the UI (Note: same as in _on_project_change)
         self.btn_download_roi_series.setText(f"⏬ (-)")
-        self.btn_download_untracked_tumors.setText(f"⏬ (-)")
-        self.btn_download_lungs_series.setText(f"⏬ (-)")
-        self.btn_download_tracked_tumors.setText(f"⏬ (-)")
+        self.btn_download_tumor_series.setText(f"⏬ (-)")
         self.label_selected_case_value.setText("-")
-        
+
         self.cb_specimen.clear()
         self.cb_scan_time.clear()
         self.cb_dataset.clear()
 
         worker = self._update_project_worker()
-        worker.returned.connect(lambda _: self._reset_comboboxes(current_specimen_idx, current_time_idx, current_dataset_idx))
+        worker.returned.connect(
+            lambda _: self._reset_comboboxes(
+                current_specimen_idx, current_time_idx, current_dataset_idx
+            )
+        )
         self.worker_manager.add_active(worker, max_iter=self.scanner.n_datasets)
 
-    def _reset_comboboxes(self, current_specimen_idx: int, current_time_idx: int, current_dataset_idx: int):
+    def _reset_comboboxes(
+        self, current_specimen_idx: int, current_time_idx: int, current_dataset_idx: int
+    ):
         self.cb_specimen.setCurrentIndex(current_specimen_idx)
         self._on_specimen_change(specimen=self.cb_specimen.currentText())
         self.cb_scan_time.setCurrentIndex(current_time_idx)
         self._on_scan_time_change(selected_time=self.cb_scan_time.currentText())
         self.cb_dataset.setCurrentIndex(current_dataset_idx)
         self._on_dataset_change(selected_dataset=self.cb_dataset.currentText())
-    
+
     @thread_worker
     def _download_timeseries_worker(self, to_download_ids: List[int], specimen: str):
         if self.project is None:
             return
-        
+
         images = []
         for k, img_id in enumerate(to_download_ids):
             print(f"Downloading image ID = {img_id}")
@@ -760,48 +699,10 @@ class OMEROWidget(QWidget):
 
         return (combine_images(images), specimen)
 
-    @thread_worker
-    def _download_ts_lungs_worker(self, to_download_ids: List[int], specimen: str):
-        if self.project is None:
-            return
-        
-        images = []
-        for k, img_id in enumerate(to_download_ids):
-            print(f"Downloading ROI from image ID = {img_id}")
-            images.append(
-                self.project.client.download_binary_mask_from_image_rois(img_id)
-            )
-            yield k + 1
-
-        return (combine_images(images), specimen)
-
-    @thread_worker
-    def _download_tracked_tumors_worker(
-        self, to_download_ids: List[int], specimen: str, table_id: int
-    ):
-        if self.project is None:
-            return
-        
-        tumor_timeseries = []
-        for k, img_id in enumerate(to_download_ids):
-            print(f"Downloading image ID = {img_id}")
-            tumor_timeseries.append(self.project.client.download_image(img_id))
-            yield k + 1
-
-        tumor_timeseries = combine_images(tumor_timeseries)
-
-        # Move this outside of the thread?
-        formatted_df = self.project.client.get_table(table_id)
-        linkage_df = to_linkage_df(formatted_df)
-
-        tracked_tumors = generate_tracked_tumors(tumor_timeseries, linkage_df)
-
-        return tracked_tumors, specimen
-    
     def _download_ts_rois(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         specimen = self.cb_specimen.currentText()
         if specimen == "":
             return
@@ -811,39 +712,18 @@ class OMEROWidget(QWidget):
             show_warning("No data to download.")
             return
 
-        worker = self._download_timeseries_worker(specimen_ctx.roi_series, specimen) # type: ignore
-        worker.returned.connect(self._download_roi_series_returned) # type: ignore
+        worker = self._download_timeseries_worker(specimen_ctx.roi_series, specimen)  # type: ignore
+        worker.returned.connect(self._download_roi_series_returned)  # type: ignore
         self.worker_manager.add_active(worker, max_iter=specimen_ctx.n_rois)
-    
+
     def _download_roi_series_returned(self, payload: Tuple[np.ndarray, str]):
         roi_series, specimen = payload
         self.viewer.add_image(roi_series, name=f"{specimen}_rois")
 
-    def _download_ts_lungs(self, *args, **kwargs):
+    def _download_ts_tumors(self, *args, **kwargs):
         if self.project is None:
             return
-        
-        specimen = self.cb_specimen.currentText()
-        if specimen == "":
-            return
 
-        specimen_ctx = self.project.get_specimen_context(specimen)
-        if specimen_ctx.n_lungs == 0:
-            show_warning(f"No data to download.")
-            return
-
-        worker = self._download_ts_lungs_worker(specimen_ctx.roi_series, specimen) # type: ignore
-        worker.returned.connect(self._download_lungs_series_returned) # type: ignore
-        self.worker_manager.add_active(worker, max_iter=specimen_ctx.n_lungs)
-    
-    def _download_lungs_series_returned(self, payload: Tuple[np.ndarray, str]):
-        lungs_series, specimen = payload
-        self.viewer.add_labels(lungs_series, name=f"{specimen}_lungs")
-
-    def _download_untracked_tumors(self, *args, **kwargs):
-        if self.project is None:
-            return
-        
         specimen = self.cb_specimen.currentText()
         if specimen == "":
             return
@@ -855,48 +735,24 @@ class OMEROWidget(QWidget):
 
         valid_tumor_series_ids = [v for v in specimen_ctx.tumor_series if pd.notna(v)]
         if pd.isna(specimen_ctx.tumor_series).sum() > 0:
-            print(f"⚠️ Tumor series IDs has NaN values; ignoring them (tumors weren't computed in all scans?).")
+            print(
+                f"⚠️ Tumor series IDs has NaN values; ignoring them (tumors weren't computed in all scans?)."
+            )
         worker = self._download_timeseries_worker(
-            valid_tumor_series_ids, specimen_ctx.name # type: ignore
+            valid_tumor_series_ids, specimen_ctx.name  # type: ignore
         )
-        worker.returned.connect(self._download_untracked_tumors_returned) # type: ignore
+        worker.returned.connect(self._download_tumors_returned)  # type: ignore
         self.worker_manager.add_active(worker, max_iter=specimen_ctx.n_labels)
 
-    def _download_untracked_tumors_returned(self, payload: Tuple[np.ndarray, str]):
+    def _download_tumors_returned(self, payload: Tuple[np.ndarray, str]):
         data, specimen = payload
         self.viewer.add_labels(data.astype(np.uint16), name=f"{specimen}_tumors")
-
-    def _download_tracked_tumors(self, *args, **kwargs):
-        if self.project is None:
-            return
-        
-        specimen = self.cb_specimen.currentText()
-        if specimen == "":
-            return
-
-        specimen_ctx = self.project.get_specimen_context(specimen)
-        if specimen_ctx.n_tracked == 0:
-            show_warning("No data to download.")
-            return
-
-        table_id = specimen_ctx.tracking_table_id
-
-        valid_tumor_series_ids = [v for v in specimen_ctx.tumor_series if pd.notna(v)]
-        if pd.isna(specimen_ctx.tumor_series).sum() > 0:
-            print(f"⚠️ Tumor series IDs has NaN values; ignoring them (tumors weren't computed in all scans?).")
-        worker = self._download_tracked_tumors_worker(valid_tumor_series_ids, specimen, table_id) # type: ignore
-        worker.returned.connect(self._download_tracked_tumors_returned) # type: ignore
-        self.worker_manager.add_active(worker, max_iter=specimen_ctx.n_tracked)
-
-    def _download_tracked_tumors_returned(self, payload: Tuple[np.ndarray, str]):
-        data, specimen = payload
-        self.viewer.add_labels(data.astype(np.uint16), name=f"{specimen}_tracked_tumors")
 
     @thread_worker
     def _upload_new_scans_worker(self, parent_dir: Union[Path, str]):
         if self.project is None:
             return
-        
+
         for k in self.project.upload_from_parent_directory(parent_dir):
             yield k + 1
 
@@ -908,32 +764,32 @@ class OMEROWidget(QWidget):
             if parent_dir != "":
                 subfolders = [f.path for f in os.scandir(parent_dir) if f.is_dir()]
                 n_datasets_to_upload = len(subfolders)
-                worker = self._upload_new_scans_worker(parent_dir) # type: ignore
+                worker = self._upload_new_scans_worker(parent_dir)  # type: ignore
                 self.worker_manager.add_active(worker, max_iter=n_datasets_to_upload)
 
     @thread_worker
     def _download_experiment_worker(self, save_dir: str):
         if self.project is None:
             return
-        
+
         save_path = Path(save_dir).resolve()
-        
+
         for k in self.project.download_all_cases(save_path):
             yield k + 1
 
         # Also save all tracking results in a single CSV
         project_dir = save_path / self.project.name
-        out_csv_path = project_dir / f"Project_{self.project.id}_tracking_results.csv"
+        out_csv_path = project_dir / f"Project_{self.project.id}_results.csv"
         utils.save_merged_csv(project_dir, out_csv_path)
         show_info(f"Saved {out_csv_path}")
 
     def _download_experiment(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         save_dir = QFileDialog.getExistingDirectory(self, caption="Save experiment")
         if isinstance(save_dir, str):
             if save_dir != "":
                 print(f"{save_dir=}")
-                worker = self._download_experiment_worker(save_dir) # type: ignore
+                worker = self._download_experiment_worker(save_dir)  # type: ignore
                 self.worker_manager.add_active(worker, max_iter=len(self.view.cases))

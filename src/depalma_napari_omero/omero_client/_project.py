@@ -4,21 +4,11 @@ from typing import List, Optional, Union
 
 import pandas as pd
 import skimage.io
-from mousetumorpy import (
-    NNUNET_MODELS,
-    YOLO_MODELS,
-    combine_images,
-    generate_tracked_tumors,
-    to_linkage_df,
-)
+from mousetumorpy import NNUNET_MODELS, combine_images
 from tqdm import tqdm
 
 from depalma_napari_omero.omero_client._client import OmeroClient
-from depalma_napari_omero.omero_client._compute import (
-    _compute_tracking,
-    _compute_roi,
-    _compute_nnunet,
-)
+from depalma_napari_omero.omero_client._compute import _compute_roi, _compute_nnunet
 from depalma_napari_omero.omero_client._context import ImageContext, SpecimenContext
 from depalma_napari_omero.omero_client.omero_config import OmeroConfig
 from depalma_napari_omero.omero_client._tags_processor import TagsProcessor
@@ -48,19 +38,10 @@ class OmeroProjectManager:
         self.corrected_tag_id = self.client.create_tag(self.id, "corrected_pred")
 
     @property
-    def lungs_models(self) -> List[str]:
-        return list(YOLO_MODELS.keys())
-
-    @property
     def tumor_models(self) -> List[str]:
         return list(NNUNET_MODELS.keys())
 
-    def batch_roi(self, lungs_model: str, ask_confirm: bool = True) -> None:
-        if not lungs_model in self.lungs_models:
-            raise ValueError(
-                f"⚠️ {lungs_model} is not an available model (available: {self.lungs_models})."
-            )
-
+    def batch_roi(self, ask_confirm: bool = True) -> None:
         roi_missing_ctx: List[ImageContext] = self.scanner.view.roi_missing
 
         if len(roi_missing_ctx) == 0:
@@ -86,10 +67,10 @@ class OmeroProjectManager:
             if confirm == "n":
                 return
 
-        for _ in self._run_batch_roi(lungs_model, roi_missing_ctx):
+        for _ in self._run_batch_roi(roi_missing_ctx):
             continue
 
-    def _run_batch_roi(self, lungs_model: str, roi_missing_ctx: List[ImageContext]):
+    def _run_batch_roi(self, roi_missing_ctx: List[ImageContext]):
         with tqdm(total=len(roi_missing_ctx), desc="Computing ROIs") as pbar:
             for k, ctx in enumerate(roi_missing_ctx):
                 print(
@@ -108,7 +89,7 @@ class OmeroProjectManager:
                 posted_image_name = f"{os.path.splitext(ctx.image_name)[0]}_roi.tif"
 
                 _compute_roi(
-                    model=lungs_model,
+                    model="v1",
                     image_name=posted_image_name,
                     image_id=ctx.image_id,
                     dataset_id=ctx.dataset_id,
@@ -189,50 +170,9 @@ class OmeroProjectManager:
 
         self.scanner.update()
 
-    def batch_track(self):
-        cases: List[str] = self.scanner.view.cases
-        for _ in self._run_batch_tracking(cases):
-            continue
-
-    def _run_batch_tracking(self, cases: List[str]):
-        k = 0
-        with tqdm(total=len(cases), desc="Tracking tumors") as pbar:
-            for specimen in cases:
-                pbar.update(1)
-                k += 1
-                yield k
-
-                ctx = self.get_specimen_context(specimen)
-
-                # Skip if there is only one time point
-                if ctx.n_labels < 2:
-                    print(f"⚠️ Only one time point is available. Skipping tracking for this case: {specimen}.")
-                    continue
-
-                # Skip if there is already a table attachment
-                if ctx.tracking_table_id is not None:
-                    print(f"⚠️ Tracking table already exists (Table ID: {ctx.tracking_table_id}). Case: {specimen}. Skipping...")
-                    continue
-                
-                # Skip if the tumor series IDs have NaN values
-                if pd.isna(ctx.tumor_series).sum() > 0:
-                    print(f"⚠️ Tumor series IDs has NaN values; tumors weren't computed in all scans? Skipping tracking for this case: {specimen}...")
-                    continue
-                
-                # Skip if we don't have the lungs series
-                if ctx.n_lungs == 0:
-                    print("⚠️ The lungs series for this case were not found, or do not exist. Skipping tracking for this case: {specimen}...")
-
-                _compute_tracking(
-                    image_id=ctx.roi_series[0],  # Destination image is the first ROI
-                    roi_timeseries_ids=ctx.roi_series,
-                    tumor_timeseries_ids=ctx.tumor_series,
-                    omero_client=self.client,
-                )
-        
     def handle_corrected_roi_uploaded(self, posted_image_id: int, image_id: int):
         img_tags = self.client.get_image_tags(image_id)
-        
+
         exclude_tags = TagsProcessor.get_image_tags(img_tags)
         exclude_tags.append("roi")
         exclude_tags.append("raw_pred")
@@ -281,18 +221,6 @@ class OmeroProjectManager:
         else:
             print(f"Already exists: {roi_out_file}")
 
-        # Download the lungs
-        # lungs_timeseries_list = []
-        # for roi_id in roi_series:
-        # print("Downloading the lungs annotation")
-        # lungs = self.omero_client.download_binary_mask_from_image_rois(roi_id)
-        # lungs_timeseries_list.append(lungs)
-        # lungs_timeseries = combine_images(lungs_timeseries_list)
-        # skimage.io.imsave(
-        #     str(out_folder / "lungs_timeseries.tif"),
-        #     lungs_timeseries,
-        # )
-
         # Download the tumors
         tumor_out_file = out_dir / "tumors_untracked.tif"
         if not tumor_out_file.exists():
@@ -300,7 +228,9 @@ class OmeroProjectManager:
             # Tumor series can have pandas NaNs in it... here, we ignore them
             valid_tumor_series_ids = [v for v in ctx.tumor_series if pd.notna(v)]
             if pd.isna(ctx.tumor_series).sum() > 0:
-                print(f"⚠️ Tumor series IDs has NaN values; ignoring them (tumors weren't computed in all scans?).")
+                print(
+                    f"⚠️ Tumor series IDs has NaN values; ignoring them (tumors weren't computed in all scans?)."
+                )
             for tumor_id in valid_tumor_series_ids:
                 print(f"Downloading tumor mask (ID={tumor_id})")
                 tumor = self.client.download_image(tumor_id)
@@ -309,20 +239,6 @@ class OmeroProjectManager:
             skimage.io.imsave(str(tumor_out_file), tumor_timeseries)
         else:
             print(f"Already exists: {tumor_out_file}")
-
-        # Download the tracked tumors
-        if ctx.tracking_table_id is not None:
-            ts_out_file = out_dir / "tumors_tracked.tif"
-            if not ts_out_file.exists():
-                formatted_df = self.client.get_table(ctx.tracking_table_id)
-                linkage_df = to_linkage_df(formatted_df)
-                tumor_series_tracked = generate_tracked_tumors(tumor_timeseries, linkage_df)
-
-                # Save the tracked tumors and CSV file
-                skimage.io.imsave(str(ts_out_file), tumor_series_tracked)
-                formatted_df.to_csv(str(out_dir / f"{specimen}_results.csv"))
-            else:
-                print(f"Already exists: {ts_out_file}")
 
     def download_all_cases(self, out_dir: Path):
         project_dir = out_dir / self.name
@@ -340,35 +256,15 @@ class OmeroProjectManager:
         n_nan_labels = pd.isna(tumor_series).sum()
         n_labels = len(tumor_series) - n_nan_labels
 
-        n_lungs = 0
-        for roi_id in roi_series:  # Refers to the omero rois (it's confusing..)
-            ome_roi_ids = self.client.get_image_rois(roi_id)
-            if len(ome_roi_ids) == 1:
-                n_lungs += 1  # TODO: correct logic?
-
         times = self.scanner.view.specimen_times(specimen)
 
-        n_tracked = 0
-        tracking_table_id = None
-        if n_rois > 0:
-            dst_image_id = roi_series[0]
-            tracking_table_ids = self.client.get_image_table_ids(dst_image_id)
-            if len(tracking_table_ids) == 1:
-                n_tracked = n_labels
-                tracking_table_id = tracking_table_ids[0]
-            elif len(tracking_table_ids) > 1:
-                print(f"Warning: Multiple tables are associated with this image: {roi_series[0]}. Which one is the tracking table? Skipping for now.")
-    
         return SpecimenContext(
             name=specimen,
             times=times,
             n_rois=n_rois,
             n_labels=n_labels,
-            n_lungs=n_lungs,
-            n_tracked=n_tracked,
             roi_series=roi_series,
             tumor_series=tumor_series,
-            tracking_table_id=tracking_table_id,
         )
 
 

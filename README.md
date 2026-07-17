@@ -55,7 +55,7 @@ dno interactive
 To run all workflows on a given project ID:
 
 ```
-dno run <project_id> --lungs-model v1 --tumor-model oct24
+dno run <project_id> --tumor-model oct24
 ```
 
 ## License

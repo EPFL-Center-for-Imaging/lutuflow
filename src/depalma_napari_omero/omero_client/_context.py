@@ -24,8 +24,5 @@ class SpecimenContext:
     times: List[str]
     n_rois: int
     n_labels: int
-    n_lungs: int
-    n_tracked: int
     roi_series: List[int]
     tumor_series: List[int]
-    tracking_table_id: Optional[int] = None

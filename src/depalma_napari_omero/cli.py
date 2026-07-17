@@ -77,21 +77,14 @@ def project_menu(project: OmeroProjectManager) -> str:
     if selected_option == "run_workflows":
         clear_screen()
         if len(project.scanner.view.roi_missing) or len(project.scanner.view.pred_missing): # type: ignore
-            if len(project.scanner.view.roi_missing) != 0: # type: ignore
-                lungs_model = questionary.select(
-                    "Lungs detection model",
-                    choices=project.lungs_models,
-                ).ask()
-                clear_screen()
             tumor_model = questionary.select(
                 "Tumor detection model",
                 choices=project.tumor_models,
             ).ask()
             if len(project.scanner.view.roi_missing) != 0: # type: ignore
-                project.batch_roi(lungs_model, ask_confirm=False)
+                project.batch_roi(ask_confirm=False)
             project.batch_nnunet(tumor_model, ask_confirm=False)
 
-        project.batch_track()
         input("\n✅ Press [Enter] to return to the previous menu...")
 
     elif selected_option == "select_cases":
@@ -188,7 +181,7 @@ def interactive(controller: OmeroController) -> str:
 
 
 def run_all_workflows(
-    controller: OmeroController, project_id: int, lungs_model: str, tumor_model: str
+    controller: OmeroController, project_id: int, tumor_model: str
 ) -> None:
     """Run all workflows on a given OMERO project"""
     for project_name, omero_project_id in controller.projects.items():
@@ -205,9 +198,8 @@ def run_all_workflows(
 
     if len(project.scanner.view.roi_missing) or len(project.scanner.view.pred_missing): # type: ignore
         if len(project.scanner.view.roi_missing): # type: ignore
-            project.batch_roi(lungs_model, ask_confirm=False)
+            project.batch_roi(ask_confirm=False)
         project.batch_nnunet(tumor_model, ask_confirm=False)
-    project.batch_track()
 
 
 def main():
@@ -227,13 +219,6 @@ def main():
     )
 
     run_parser.add_argument(
-        "--lungs-model",
-        default="v1",
-        choices=list(YOLO_MODELS.keys()),
-        help="Lungs model to use",
-    )
-
-    run_parser.add_argument(
         "--tumor-model",
         default="oct24",
         choices=list(NNUNET_MODELS.keys()),
@@ -248,7 +233,7 @@ def main():
     elif args.command == "run":
         controller = handle_login()
         run_all_workflows(
-            controller, args.project_id, args.lungs_model, args.tumor_model
+            controller, args.project_id, args.tumor_model
         )
     else:
         parser.print_help()

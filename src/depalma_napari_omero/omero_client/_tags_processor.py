@@ -21,8 +21,7 @@ class TagsProcessor:
     @classmethod
     def get_scan_time_tags(cls, img_tags: List[str]) -> List[str]:
         """Finds a time stamp (e.g. 'T2') among image tags based on a regular expression."""
-        r = re.compile("(Tm?|SCAN|scan)[0-9]+")
-        # r = re.compile("(Tm?|SCAN|scan)[0-9]+")  # TODO: Should we remove Tm1? = T?
+        r = re.compile("(Tm?|SCAN|scan)[0-9]+") # TODO: Should we remove Tm1? = T?
         return list(sorted(filter(r.match, img_tags)))
     
     @classmethod
