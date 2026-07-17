@@ -15,7 +15,7 @@ from napari.layers import Image, Labels
 from napari.qt.threading import thread_worker
 from napari.utils.notifications import show_info, show_warning
 from napari_toolkit.containers.collapsible_groupbox import QCollapsibleGroupBox
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -52,12 +52,12 @@ class OMEROWidget(QWidget):
 
         ### Main layout
         layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignTop)  # type: ignore
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # type: ignore
 
         ### Login
         login_layout = QGridLayout()
         login_layout.setContentsMargins(10, 10, 10, 10)
-        login_layout.setAlignment(Qt.AlignTop)  # type: ignore
+        login_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # type: ignore
 
         omero_groupbox = QCollapsibleGroupBox("OMERO server")  # type: ignore
         omero_groupbox.setChecked(False)
@@ -104,7 +104,7 @@ class OMEROWidget(QWidget):
 
         select_layout = QGridLayout()
         select_layout.setContentsMargins(10, 10, 10, 10)
-        select_layout.setAlignment(Qt.AlignTop)  # type: ignore
+        select_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # type: ignore
 
         # Experiment group
         experiment_group = QCollapsibleGroupBox("Experiment")  # type: ignore
@@ -141,6 +141,17 @@ class OMEROWidget(QWidget):
         self.btn_run_workflows = QPushButton("🔁 Run all workflows", self)
         self.btn_run_workflows.clicked.connect(self._run_all_workflows) # type: ignore
         experiment_layout.addWidget(self.btn_run_workflows, 3, 0, 1, 3)
+        
+        
+        # Tracking workflow
+        self.btn_run_tracking_workflow = QPushButton("🔁 Run tracking workflow", self)
+        self.btn_run_tracking_workflow.clicked.connect(self._run_tracking_workflow) # type: ignore
+        
+        track_layout = QGridLayout()
+        track_layout.setContentsMargins(10, 10, 10, 10)
+        track_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # type: ignore
+        track_layout.addWidget(self.btn_run_tracking_workflow, 0, 0)
+
 
         # Upload new scans
         self.btn_upload_scans = QPushButton("⬆️ Upload new scans", self)
@@ -231,7 +242,7 @@ class OMEROWidget(QWidget):
         ### Generic upload tab
         generic_upload_layout = QGridLayout()
         generic_upload_layout.setContentsMargins(10, 10, 10, 10)
-        generic_upload_layout.setAlignment(Qt.AlignTop)  # type: ignore
+        generic_upload_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
         self.cb_dataset = QComboBox()
         self.cb_dataset.currentTextChanged.connect(self._on_dataset_change)
@@ -259,10 +270,13 @@ class OMEROWidget(QWidget):
         tab2.setLayout(select_layout)
         tab3 = QWidget(self)
         tab3.setLayout(generic_upload_layout)
+        tab4 = QWidget(self)
+        tab4.setLayout(track_layout)
         self.tabs = QTabWidget()
         self.tabs.addTab(tab1, "Login")
         self.tabs.addTab(tab2, "Data selection")
         self.tabs.addTab(tab3, "Download / Upload")
+        self.tabs.addTab(tab4, "Tracking")
         layout.addWidget(self.tabs)
 
         # Setup layer callbacks
@@ -273,7 +287,7 @@ class OMEROWidget(QWidget):
         self.viewer.layers.events.removed.connect(self._on_layer_change)
         self._on_layer_change(None)
 
-        self.worker_manager = WorkerManager(grayout_ui_list=[tab2, tab3])
+        self.worker_manager = WorkerManager(grayout_ui_list=[tab2, tab3, tab4])
 
         cancel_btn = self.worker_manager.cancel_btn
         layout.addWidget(cancel_btn)
@@ -659,6 +673,15 @@ class OMEROWidget(QWidget):
         worker.returned.connect(self._reset_ui_and_update_project)
 
         self.worker_manager.add_active(worker)
+    
+    
+    def _run_tracking_workflow(self, *args, **kwargs):
+        worker = self._tracking_workflow_worker()
+
+        worker.returned.connect(self._reset_ui_and_update_project)
+
+        self.worker_manager.add_active(worker)
+        
 
     @thread_worker
     def _workflow_worker(
@@ -683,6 +706,11 @@ class OMEROWidget(QWidget):
                 raise RuntimeError("Tumor model selection required.")
             for _ in self.project._run_batch_nnunet(tumor_model, pred_missing_ctx):
                 continue
+    
+    @thread_worker
+    def _tracking_workflow_worker(self):
+        if self.project is None:
+            return
         
         if len(self.view.cases) > 0:
             for _ in self.project._run_batch_tracking(self.view.cases):
