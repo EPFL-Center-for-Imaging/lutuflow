@@ -7,7 +7,7 @@ from depalma_napari_omero.omero_client._project import (
     OmeroController,
     OmeroProjectManager,
 )
-from mousetumorpy import NNUNET_MODELS, YOLO_MODELS
+from mousetumorpy import NNUNET_MODELS
 
 
 def cli_menu(func: Callable) -> Callable:

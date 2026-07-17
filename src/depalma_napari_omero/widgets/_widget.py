@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
-from mousetumorpy import NNUNET_MODELS, combine_images
 import napari
 from napari.layers import Image, Labels
 from napari.qt.threading import thread_worker
@@ -22,6 +21,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from mousetumorpy import NNUNET_MODELS, combine_images
 
 from depalma_napari_omero.omero_client._context import ImageContext
 from depalma_napari_omero.omero_client._project import (
@@ -776,12 +777,6 @@ class OMEROWidget(QWidget):
 
         for k in self.project.download_all_cases(save_path):
             yield k + 1
-
-        # Also save all tracking results in a single CSV
-        project_dir = save_path / self.project.name
-        out_csv_path = project_dir / f"Project_{self.project.id}_results.csv"
-        utils.save_merged_csv(project_dir, out_csv_path)
-        show_info(f"Saved {out_csv_path}")
 
     def _download_experiment(self, *args, **kwargs):
         if self.project is None:
