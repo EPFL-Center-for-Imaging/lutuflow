@@ -3,6 +3,6 @@ from depalma_napari_omero.widgets import OMEROWidget
 from depalma_napari_omero import __version__
 
 if __name__ == "__main__":
-    viewer = napari.Viewer(title=f"De Palma Lab ({__version__})")
-    viewer.window.add_dock_widget(OMEROWidget(viewer), name="De Palma Lab")
+    viewer = napari.Viewer(title=f"Mousetumorpy-OMERO ({__version__})")
+    viewer.window.add_dock_widget(OMEROWidget(viewer), name="Mousetumorpy-OMERO")
     napari.run()

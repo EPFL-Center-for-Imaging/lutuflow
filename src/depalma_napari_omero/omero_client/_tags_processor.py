@@ -5,23 +5,23 @@ from typing import List
 class TagsProcessor:
     @classmethod
     def get_specimen_tags(cls, tags: List[str]) -> List[str]:
-        r = re.compile("C[0-9]+|Animal-[0-9]+")
+        r = re.compile(r"(C|Animal|ANIMAL)-?\d+")
         return list(sorted(filter(r.match, tags)))
 
     @classmethod
     def get_image_tags(cls, img_tags: List[str]) -> List[str]:
-        r = re.compile("(I|i)mage(s?)")
+        r = re.compile(r"(image)(s?)", re.IGNORECASE)
         return list(filter(r.match, img_tags))
 
     @classmethod
     def get_raw_pred_tags(cls, img_tags: List[str]) -> List[str]:
-        r = re.compile(".*pred.*")
+        r = re.compile(r".*pred.*", re.IGNORECASE)
         return list(filter(r.match, img_tags))
 
     @classmethod
     def get_scan_time_tags(cls, img_tags: List[str]) -> List[str]:
-        """Finds a time stamp (e.g. 'T2') among image tags based on a regular expression."""
-        r = re.compile("(Tm?|SCAN|scan)[0-9]+") # TODO: Should we remove Tm1? = T?
+        """Finds a time stamp (e.g. 'T2' or 'scan1') among image tags based on a regular expression."""
+        r = re.compile(r"(Tm?|SCAN|scan)-?\d+")
         return list(sorted(filter(r.match, img_tags)))
     
     @classmethod

@@ -1,7 +1,7 @@
 [project]
 name = "depalma-napari-omero"
 dynamic = ["version"]
-description = "Napari interface for the De Palma lab."
+description = "Napari interface for the Mousetumorpy project with connection to OMERO."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 license = {file = "LICENSE"}
@@ -25,9 +25,10 @@ dependencies = [
     "napari[all]",
     "PyQt6",
     "napari-toolkit",
-    # "napari-adaptive-painting",
     "mousetumorpy>=0.0.6",
     "napari-mousetumorpy>=0.0.5",
+    "pyyaml",
+    "platformdirs",
 ]
 
 [project.scripts]

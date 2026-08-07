@@ -29,11 +29,10 @@ from depalma_napari_omero.omero_client._project import (
     OmeroController,
     OmeroProjectManager,
 )
-from depalma_napari_omero.omero_client.omero_config import OmeroConfig
+from depalma_napari_omero.omero_client.omero_config import load_config, OmeroConfig
 from depalma_napari_omero.widgets._worker import WorkerManager
 from depalma_napari_omero.omero_client._scanner import ProjectScanner
 from depalma_napari_omero.omero_client._view import ProjectDataView
-import depalma_napari_omero.omero_client._utils as utils
 
 
 class OMEROWidget(QWidget):
@@ -43,7 +42,7 @@ class OMEROWidget(QWidget):
         self.viewer = napari_viewer
         self.controller = None
 
-        default_omero_cfg = OmeroConfig()
+        default_omero_cfg = load_config()
 
         ### Main layout
         layout = QVBoxLayout(self)

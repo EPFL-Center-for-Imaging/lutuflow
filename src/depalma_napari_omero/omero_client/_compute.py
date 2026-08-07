@@ -1,16 +1,7 @@
-import re
-
 from mousetumorpy import LungsPredictor, TumorPredictor
 
 from depalma_napari_omero.omero_client._client import OmeroClient
-
-
-def find_image_tag(img_tags) -> list:
-    r = re.compile("(I|i)mage(s?)")
-    image_tag = list(filter(r.match, img_tags))
-    if len(image_tag) == 0:
-        return []
-    return image_tag
+from depalma_napari_omero.omero_client._tags_processor import TagsProcessor
 
 
 def _compute_roi(
@@ -40,7 +31,7 @@ def _compute_roi(
     roi_tag_id = omero_client.create_tag(project_id, "roi")
     omero_client.tag_image_with_tag(posted_image_id, tag_id=roi_tag_id)
 
-    image_tags_list = find_image_tag(omero_client.get_image_tags(image_id))
+    image_tags_list = TagsProcessor.get_image_tags(omero_client.get_image_tags(image_id))
 
     omero_client.copy_image_tags(
         src_image_id=image_id,
