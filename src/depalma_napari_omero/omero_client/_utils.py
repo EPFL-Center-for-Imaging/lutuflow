@@ -26,12 +26,12 @@ def load_ct_from_folder(image_dir: Union[str, Path]) -> ImageContext:
     # Check the naming conventions
     if TagsProcessor.get_specimen_tags([specimen]) is None:
         raise ValueError(
-            f"Specimen name {specimen} does not comply with naming convention (C*****)."
+            f"Name {specimen} does not comply with specimen naming convention (C***** or Animal*****)."
         )
 
     if not len(TagsProcessor.get_scan_time_tags([scan_time])) == 1:
         raise ValueError(
-            f"Scan time {scan_time} does not comply with naming convention (SCAN* or T*)."
+            f"Name {scan_time} does not comply with scan time naming convention (SCAN* or T*)."
         )
         
     time_idx = TagsProcessor.get_scan_time_idx(scan_time)

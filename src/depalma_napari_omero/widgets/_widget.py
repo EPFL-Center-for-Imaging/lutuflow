@@ -185,7 +185,7 @@ class OMEROWidget(QWidget):
         timeseries_layout = QGridLayout(self.timeseries_group)
         select_layout.addWidget(self.timeseries_group, 2, 0)
 
-        timeseries_layout.addWidget(QLabel("Selected case:", self), 0, 0)
+        timeseries_layout.addWidget(QLabel("Selected case", self), 0, 0)
         self.label_selected_case_value = QLabel("-", self)
         timeseries_layout.addWidget(self.label_selected_case_value, 0, 1)
 
