@@ -17,7 +17,7 @@ from omero.gateway import (
     _ImageWrapper,
     _RoiWrapper,
 )
-from depalma_napari_omero.omero_client.omero_config import OmeroConfig
+from depalma_napari_omero.omero_client.omero_config import load_config, OmeroConfig
 
 
 def require_active_conn(func: Callable):
@@ -39,7 +39,7 @@ class OmeroClient:
     def __init__(
         self, user: str, password: str, omero_cfg: Optional[OmeroConfig] = None
     ) -> None:
-        self.omero_cfg = omero_cfg if omero_cfg is not None else OmeroConfig()
+        self.omero_cfg = omero_cfg if omero_cfg is not None else load_config()
         self.user = user
         self.password = password
         self._conn = None

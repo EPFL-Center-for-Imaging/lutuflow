@@ -61,9 +61,9 @@ def project_menu(project: OmeroProjectManager) -> str:
 
     project_choices = {
         "🔙 Back": "back",
-        "🔁 Run all workflows": "run_workflows",
+        "🔁 Run detection workflow": "run_workflows",
+        "⏫ Upload new scans in batch": "upload_new_scans",
         f"🐭 Select cases ({len(project.scanner.view.cases)})": "select_cases",
-        "⏫ Import new raw scans in batch": "upload_new_scans",
         f"": "",
     }
 

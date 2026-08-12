@@ -1,4 +1,3 @@
-![EPFL Center for Imaging logo](https://imaging.epfl.ch/resources/logo-for-gitlab.svg)
 ![screenshot](./assets/screenshot.png)
 # Image analysis of tumor nodules in mice CT scans
 
