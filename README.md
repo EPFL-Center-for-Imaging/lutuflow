@@ -51,6 +51,8 @@ From the command-line, start Napari with the `depalma-napari-omero` plugin:
 napari -w depalma-napari-omero
 ```
 
+Refer to the [documentation](https://github.com/EPFL-Center-for-Imaging/depalma-napari-omero/wiki) for more details.
+
 **As a CLI**
 
 In interactive mode:
@@ -64,6 +66,8 @@ To run all workflows on a given project ID:
 ```
 dno run <project_id> --tumor-model oct24
 ```
+
+Refer to the [documentation](https://github.com/EPFL-Center-for-Imaging/depalma-napari-omero/wiki/CLI) for more details.
 
 ## License
 
