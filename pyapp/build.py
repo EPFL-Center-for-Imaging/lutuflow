@@ -5,6 +5,7 @@ Packages the lutuflow project into a single exectuable with PyApp.
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from lutuflow import __version__, __name__
@@ -26,7 +27,7 @@ def build_local_wheel() -> Path:
     if dist_dir.exists():
         shutil.rmtree(dist_dir)
     subprocess.run(
-        ["python", "-m", "build", "--wheel", str(script_directory.parent)],
+        [sys.executable, "-m", "build", "--wheel", str(script_directory.parent)],
         check=True,
     )
     wheels = list(dist_dir.glob("*.whl"))
@@ -41,7 +42,7 @@ def render_requirements(template_name: str, rendered_name: str, wheel_path: Path
     content = template_path.read_text()
     content = content.replace(
         "lutuflow[napari]==${PYAPP_PROJECT_VERSION}",
-        f"lutuflow[napari] @ file://{wheel_path.as_posix()}",
+        f"lutuflow[napari] @ {wheel_path.as_uri()}",
     )
     rendered_path.write_text(content)
     return str(rendered_path.resolve())
@@ -91,6 +92,7 @@ destination_path = str(
 )
 
 if os.path.exists(source_path):
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
     shutil.copy(source_path, destination_path)
     print(f"Copied {source_path} to {destination_path}")
 else:
