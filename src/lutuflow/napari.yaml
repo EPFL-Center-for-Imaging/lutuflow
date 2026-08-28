@@ -6,7 +6,7 @@ contributions:
       title: OMERO interface
       python_name: lutuflow.napari_tools:OMEROWidget
     - id: lutuflow.skit
-      title: LuTuFlow
+      title: Algorithms
       python_name: lutuflow.napari_tools:PluginWidget
     - id: lutuflow.picker
       title: Color picker
@@ -27,7 +27,7 @@ contributions:
     - command: lutuflow.start
       display_name: OMERO interface
     - command: lutuflow.skit
-      display_name: LuTuFlow
+      display_name: Algorithms
     - command: lutuflow.picker
       display_name: Color picker
     - command: lutuflow.cropper

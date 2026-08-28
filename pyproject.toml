@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-napari = ["imaging-server-kit>=0.2[napari]"]
+napari = ["imaging-server-kit[napari]>=0.2"]
 
 [project.scripts]
 lutuflow = "lutuflow.cli:main"
