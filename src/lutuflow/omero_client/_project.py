@@ -204,7 +204,7 @@ class OmeroProjectManager:
         out_dir = Path(out_dir) / specimen
         if not out_dir.exists():
             os.makedirs(out_dir)
-            print("Created the output folder: ", out_dir)
+            print("✅ Created the output folder: ", out_dir)
 
         ctx = self.get_specimen_context(specimen)
 
@@ -244,7 +244,7 @@ class OmeroProjectManager:
         project_dir = out_dir / self.name
         if not project_dir.exists():
             os.makedirs(project_dir)
-            print("Created the output folder: ", project_dir)
+            print("✅ Created the output folder: ", project_dir)
 
         for k, case in enumerate(self.scanner.view.cases):
             self.download_case(case, project_dir)

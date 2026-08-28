@@ -51,7 +51,7 @@ def handle_login() -> OmeroController:
         else:
             print(f"{connect_status=}")
             if n_attempts + 1 > max_attempts:
-                print(f"Failed to connect {max_attempts} times in a row. Exiting...")
+                print(f"❌ Failed to connect {max_attempts} times in a row. Exiting...")
                 controller.quit()
                 exit(0)
 
@@ -301,7 +301,7 @@ def main():
         help="Labels file (.tif). It should be a 4D (TZYX) time series of tumor masks.",
     )
     track_parser.add_argument(
-        "--image-file",
+        "image_file",
         help="Input image (.tif). It should be a 4D (TZYX) time series of lung ROIs.",
     )
     track_parser.add_argument(

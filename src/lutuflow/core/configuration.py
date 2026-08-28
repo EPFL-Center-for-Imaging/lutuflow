@@ -3,14 +3,14 @@ MIN_SIZE_PX = 150
 NNUNET_MODELS = {
     "nov23": (
         "https://sandbox.zenodo.org/records/588733/files/nov23.zip",
-        "md5:81432fec986b0e110632b7d4f143a0de",
+        "md5:abfbd15b8d2fc9dedfb025a9eaca54bf",
     ),
     "oct24": (
         "https://sandbox.zenodo.org/records/588733/files/oct24.zip",
-        "md5:87f5db0adbb7abbe3598e08ccd213ce5 ",
+        "md5:87f5db0adbb7abbe3598e08ccd213ce5",
     ),
     "may25": (
-        "https://sandbox.zenodo.org/records/213786/files/may25.zip",
+        "https://sandbox.zenodo.org/records/588733/files/may25.zip",
         "md5:56f79aea385d5aa51d9fba81a3a80e09",
     ),
 }

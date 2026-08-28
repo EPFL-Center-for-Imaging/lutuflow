@@ -1,17 +1,13 @@
 ![screenshot](./assets/screenshot.png)
 # 🐭 LuTuFlow
 
-> A toolbox to segment and track lung tumor nodules in longitudinal series of mice CT scans.
+LuTuFlow is a Python toolbox for segmenting and tracking lung tumor nodules in longitudinal series of mice CT scans. It is developed as a collaboration between the [EPFL Center for Imaging](https://imaging.epfl.ch/) and the [De Palma Lab](https://www.epfl.ch/labs/depalma-lab/).
 
 ## Hightlights
 
 - **Detect the lungs automatically** using a pretrained [YoloV8](https://docs.ultralytics.com/) model and crop the scans around them.
 - **Detect tumor nodules** using a pretrained [nnUNet](https://github.com/MIC-DKFZ/nnUNet) 3D segmentation model.
 - **Track individual tumors** across several CT scans of the same mouse.
-
-We provide a unified user interface in Napari to detect, track, visualize, annotate, and measure the size evolution of lung tumor nodules in mice CT scans. The datasets and experiment metadata are automatically downloaded and parsed from OMERO.
-
-This project is part of a collaboration between the [EPFL Center for Imaging](https://imaging.epfl.ch/) and the [De Palma Lab](https://www.epfl.ch/labs/depalma-lab/).
 
 ## Installation
 
@@ -97,7 +93,7 @@ lutuflow omero interactive
 To run the tumor detection workflow on an OMERO project:
 
 ```
-lutuflow omero run <project_id> --tumor-model oct24
+lutuflow omero run <project_id>
 ```
 
 For more details, see `lutuflow omero --help`.
@@ -137,7 +133,7 @@ For more details, see `lutuflow combine --help`.
 Track tumor nodules across a 4D mask (TZYX) time series using [laptrack](https://github.com/yfukai/laptrack).
 
 ```sh
-lutuflow track <tumors_file> <image_file> <lungs_file> <out_dir>
+lutuflow track <labels_file> <image_file>
 ```
 
 For more details, see `lutuflow track --help`.

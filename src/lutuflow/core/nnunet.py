@@ -29,20 +29,19 @@ class TumorPredictor:
     """
     def __init__(self, model: str):
         self.model = model
-        model_path = str(Path.home() / ".lutuflow" / model)
+        model_path = (Path.home() / ".lutuflow").resolve()#/ model)
 
         model_url, model_known_hash = NNUNET_MODELS.get(model)
 
         pooch.retrieve(
             url = model_url,
-            # known_hash= model_known_hash,
-            known_hash=None,
-            path=model_path,
+            known_hash= model_known_hash,
+            path=str(model_path),
             progressbar=True,
             processor=pooch.Unzip(extract_dir=model_path)
         )
 
-        os.environ["nnUNet_results"] = model_path
+        os.environ["nnUNet_results"] = str(model_path / model)
 
     def predict(self, image: np.ndarray) -> np.ndarray:
         """
@@ -78,7 +77,7 @@ class TumorPredictor:
             self._run_nnunet(device=DEVICE)
         except subprocess.CalledProcessError as e:
             if DEVICE == "cuda":
-                print("Could not run nnUNet with CUDA even if it is available. Falling back to CPU instead...")
+                print("⚠️ Could not run nnUNet with CUDA even if it is available. Falling back to CPU instead...")
                 self._run_nnunet(device="cpu")
             else:
                 raise
@@ -88,13 +87,13 @@ class TumorPredictor:
             if len(output_preds_file) > 0:
                 segmentation = nib.load(output_preds_file[0]).get_fdata().astype(np.uint16)
             else:
-                raise RuntimeError(f"Running nnUNet (model {self.model}) on this image was unsuccessful.")
+                raise RuntimeError(f"❌ Running nnUNet (model {self.model}) on this image was unsuccessful.")
         else:  # New models based on tiff format
             output_preds_file = list(glob.glob(os.path.join(self.output_folder, "*.tif")))
             if len(output_preds_file) > 0:
                 segmentation = skimage.io.imread(output_preds_file[0]).astype(np.uint16)
             else:
-                raise RuntimeError(f"Running nnUNet (model {self.model}) on this image was unsuccessful.")
+                raise RuntimeError(f"❌ Running nnUNet (model {self.model}) on this image was unsuccessful.")
 
         shutil.rmtree(str(self.input_folder))
         shutil.rmtree(str(self.output_folder))

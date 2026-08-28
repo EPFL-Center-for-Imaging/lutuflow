@@ -110,7 +110,7 @@ class TableWidget(QWidget):
     def handle_selected_table_label_changed(self, selected_table_label):
 
         if not selected_table_label in self.df['label'].unique():
-            print(f"Label {selected_table_label} is not present.")
+            print(f"⚠️ Label {selected_table_label} is not present.")
             return
 
         self.selected_labels_layer.selected_label = selected_table_label

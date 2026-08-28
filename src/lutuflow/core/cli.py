@@ -34,7 +34,7 @@ def predict(image_file, out_dir, model):
 
     if isinstance(result, np.ndarray):
         skimage.io.imsave(out_file, result)
-        print(f"Saved {out_file}")
+        print(f"✅ Saved {out_file}")
     else:
         print(result)
 
@@ -59,12 +59,12 @@ def crop(image_file, out_dir, with_lungs):
 
     image_roi = result[0]
     skimage.io.imsave(out_file_roi, image_roi)
-    print(f"Saved {out_file_roi}")
+    print(f"✅ Saved {out_file_roi}")
 
     if with_lungs:
         lungs_roi = result[1]
         skimage.io.imsave(out_file_lungs, lungs_roi)
-        print(f"Saved {out_file_lungs}")
+        print(f"✅ Saved {out_file_lungs}")
 
 
 def combine(*files, out_dir):
@@ -72,11 +72,11 @@ def combine(*files, out_dir):
     n_files = len(files)
 
     if n_files < 2:
-        print(f"Please provide at least 2 files to combine (Got {n_files}).")
+        print(f"⚠️ Please provide at least 2 files to combine (Got {n_files}).")
         return
 
     elif n_files > 4:
-        print(f"Please provide at most 4 files to combine (Got {n_files}).")
+        print(f"⚠️ Please provide at most 4 files to combine (Got {n_files}).")
         return
 
     if out_dir is None:
@@ -100,7 +100,7 @@ def combine(*files, out_dir):
         image_series = sk_combine_image_quatuor(*images)
 
     skimage.io.imsave(out_file, image_series)
-    print(f"Saved {out_file}")
+    print(f"✅ Saved {out_file}")
 
 
 def track(
@@ -152,6 +152,6 @@ def track(
 
         # Save the tumors too
         skimage.io.imsave(tracked_labels_file, tracked_tumors)
-        print(f"Saved {tracked_labels_file}")
+        print(f"✅ Saved {tracked_labels_file}")
     else:
         print(result)

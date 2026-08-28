@@ -18,9 +18,9 @@ def _compute_roi(
 
     try:
         roi, lungs_roi = predictor.compute_3d_roi(image)
-    except:
+    except Exception:
         print(
-            f"An error occured while computing the ROI in this image: ID={image_id}. Skipping...",
+            f"❌ An error occured while computing the ROI in this image: ID={image_id}. Skipping...",
         )
 
     posted_image_id = omero_client.import_image_to_ds(
@@ -41,7 +41,7 @@ def _compute_roi(
         exclude_tags=image_tags_list,
     )
 
-    print("ROI detection workflow completed!")
+    print("✅ ROI detection workflow completed!")
 
 
 def _compute_nnunet(
@@ -58,9 +58,9 @@ def _compute_nnunet(
 
     try:
         image_pred = predictor.predict(image)
-    except:
+    except Exception:
         print(
-            f"An error occured while computing the NNUNET prediction in this image: ID={image_id}."
+            f"❌ An error occured while computing the NNUNET prediction in this image: ID={image_id}."
         )
         return
 
@@ -76,4 +76,4 @@ def _compute_nnunet(
         exclude_tags=["roi"],
     )
 
-    print("Segmentation workflow completed!")
+    print("✅ Segmentation workflow completed!")

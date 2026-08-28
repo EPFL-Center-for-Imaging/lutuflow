@@ -344,7 +344,7 @@ def run_tracking(
     linkage_df = linkage_df.fillna(0)
 
     if len(linkage_df) == 0:
-        print("No tumors were tracked.")
+        print("⚠️ No tumors were tracked.")
 
     return linkage_df
 

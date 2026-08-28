@@ -50,7 +50,7 @@ def sk_save_csv(tracked_tumors, untracked_tumors, save_dir, file_name):
     if not file_name.endswith(".csv"):
         file_name = file_name + ".csv"
 
-    csv_file = save_dir / file_name
+    csv_file = Path(save_dir).resolve() / file_name
 
     linkage_df = regenerate_linkage_df(
         tracked_tumor_series=tracked_tumors,
