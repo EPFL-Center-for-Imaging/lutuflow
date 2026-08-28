@@ -24,4 +24,4 @@ The following is not intended to be a complete enumeration. Be sure to view the 
 ## Academia
 
 - [École Polytechnique Fédérale de Lausanne (EPFL)](https://www.epfl.ch/en/)
-    - [Center for Imaging](https://imaging.epfl.ch) <sup>\[[1](https://github.com/EPFL-Center-for-Imaging/depalma-napari-omero/blob/ea3fbd156799f95ddf482e382e37060c6ae3a9fb/pyapp/build.py#L14)\]</sup>
+    - [Center for Imaging](https://imaging.epfl.ch) <sup>\[[1](https://github.com/EPFL-Center-for-Imaging/lutuflow/blob/ea3fbd156799f95ddf482e382e37060c6ae3a9fb/pyapp/build.py#L14)\]</sup>

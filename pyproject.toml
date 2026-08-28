@@ -1,17 +1,19 @@
 [project]
-name = "depalma-napari-omero"
+name = "lutuflow"
 dynamic = ["version"]
-description = "Napari interface for the Mousetumorpy project with connection to OMERO."
+description = "A toolbox to segment and track lung tumor nodules in longitudinal series of mice CT scans."
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
-license = {file = "LICENSE"}
+requires-python = ">=3.10,<3.13"
+license = { file = "LICENSE" }
 authors = [{ name = "Mallory Wittwer", email = "mallory.wittwer@epfl.ch" }]
 
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
-    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Image Processing",
 ]
 
@@ -22,24 +24,30 @@ dependencies = [
     "tifffile",
     "pooch",
     "questionary",
-    "napari[all]",
-    "PyQt6",
-    "napari-toolkit",
-    "mousetumorpy>=0.0.6",
-    "napari-mousetumorpy>=0.0.5",
-    "pyyaml",
     "platformdirs",
+    "PyYAML",                    # for nnunet
+    "appdirs",                   # for nnunet
+    "blosc2",                    # for nnunet
+    "nnunetv2",
+    "scikit-image",
+    "ultralytics",
+    "laptrack>=0.17.1",
+    "vedo",
+    "imaging-server-kit>=0.2",
 ]
 
+[project.optional-dependencies]
+napari = ["imaging-server-kit[napari]"]
+
 [project.scripts]
-dno = "depalma_napari_omero.cli:main"
+lutuflow = "lutuflow.cli:main"
 
 [project.entry-points."napari.manifest"]
-depalma-napari-omero = "depalma_napari_omero:napari.yaml"
+lutuflow = "lutuflow:napari.yaml"
 
 [project.urls]
-homepage = "https://github.com/EPFL-Center-for-Imaging/depalma-napari-omero"
-repository = "https://github.com/EPFL-Center-for-Imaging/depalma-napari-omero"
+homepage = "https://github.com/EPFL-Center-for-Imaging/lutuflow"
+repository = "https://github.com/EPFL-Center-for-Imaging/lutuflow"
 
 [build-system]
 requires = ["setuptools>=42.0.0", "wheel", "setuptools_scm"]
@@ -55,6 +63,6 @@ where = ["src"]
 "*" = ["*.yaml"]
 
 [tool.setuptools_scm]
-write_to = "src/depalma_napari_omero/_version.py"
+write_to = "src/lutuflow/_version.py"
 version_scheme = "guess-next-dev"
 local_scheme = "no-local-version"

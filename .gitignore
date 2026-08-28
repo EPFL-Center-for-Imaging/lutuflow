@@ -126,3 +126,9 @@ release/
 todo.txt
 
 **/_version.py
+
+zenodo/
+TODO.md
+AGENTS.md
+CLAUDE.md
+.claude/
