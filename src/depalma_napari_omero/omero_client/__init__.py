@@ -1,2 +1,0 @@
-from depalma_napari_omero.omero_client._client import OmeroClient
-from depalma_napari_omero.omero_client._project import OmeroController

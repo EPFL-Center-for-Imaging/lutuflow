@@ -4,16 +4,16 @@ from typing import List, Optional, Union
 
 import pandas as pd
 import skimage.io
-from mousetumorpy import NNUNET_MODELS, combine_images
+from lutuflow.core import NNUNET_MODELS, combine_images
 from tqdm import tqdm
 
-from depalma_napari_omero.omero_client._client import OmeroClient
-from depalma_napari_omero.omero_client._compute import _compute_roi, _compute_nnunet
-from depalma_napari_omero.omero_client._context import ImageContext, SpecimenContext
-from depalma_napari_omero.omero_client.omero_config import OmeroConfig
-from depalma_napari_omero.omero_client._tags_processor import TagsProcessor
-from depalma_napari_omero.omero_client._scanner import ProjectScanner
-import depalma_napari_omero.omero_client._utils as utils
+from lutuflow.omero_client._client import OmeroClient
+from lutuflow.omero_client._compute import _compute_roi, _compute_nnunet
+from lutuflow.omero_client._context import ImageContext, SpecimenContext
+from lutuflow.omero_client.omero_config import OmeroConfig
+from lutuflow.omero_client._tags_processor import TagsProcessor
+from lutuflow.omero_client._scanner import ProjectScanner
+import lutuflow.omero_client._utils as utils
 
 
 class OmeroProjectManager:
@@ -89,7 +89,7 @@ class OmeroProjectManager:
                 posted_image_name = f"{os.path.splitext(ctx.image_name)[0]}_roi.tif"
 
                 _compute_roi(
-                    model="v1",
+                    model="image-to-lungs",
                     image_name=posted_image_name,
                     image_id=ctx.image_id,
                     dataset_id=ctx.dataset_id,

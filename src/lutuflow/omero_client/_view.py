@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from depalma_napari_omero.omero_client._context import ImageContext
+from lutuflow.omero_client._context import ImageContext
 
 
 @dataclass
@@ -132,11 +132,11 @@ class ProjectDataView:
             ],
             columns=columns,
         )
-        
+
         df = self.df_all[self.df_all["class"] != "other"].copy()
 
         df_other = self.df_all[self.df_all["class"] == "other"].copy()
-        
+
         df_summary = self._construct_df_summary(df)
 
         # Remove rows with an image missing
@@ -277,7 +277,9 @@ class ProjectDataView:
             print("  - No issues found 🎉")
         else:
             if len(self.report_data.other_files) > 0:
-                print("\n➡️ OMERO files that were ignored (you may want to check them):")
+                print(
+                    "\n➡️ OMERO files that were ignored (you may want to check them):"
+                )
                 print(self.report_data.other_files)
 
         print("=" * 60 + "\n")
@@ -309,7 +311,11 @@ class ProjectDataView:
             & (self.df["class"].isin(["corrected_pred", "raw_pred"]))
         ][["image_id", "time", "class"]]
 
-        labels_img_ids = labels_img_ids.groupby("time")[labels_img_ids.columns].apply(filter_group).reset_index(drop=True)
+        labels_img_ids = (
+            labels_img_ids.groupby("time")[labels_img_ids.columns]
+            .apply(filter_group)
+            .reset_index(drop=True)
+        )
 
         labels_img_ids = pd.merge(
             roi_img_ids,

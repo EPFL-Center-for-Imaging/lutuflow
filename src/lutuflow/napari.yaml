@@ -1,0 +1,48 @@
+name: lutuflow
+display_name: LuTuFlow
+contributions:
+  commands:
+    - id: lutuflow.start
+      title: OMERO interface
+      python_name: lutuflow.napari_tools:OMEROWidget
+    - id: lutuflow.skit
+      title: LuTuFlow
+      python_name: lutuflow.napari_tools:PluginWidget
+    - id: lutuflow.picker
+      title: Color picker
+      python_name: lutuflow.napari_tools:ColorPickerWidget
+    - id: lutuflow.cropper
+      title: Manual cropping
+      python_name: lutuflow.napari_tools:ManualCropWidget
+    - id: lutuflow.tracks
+      title: Convert to tracks
+      python_name: lutuflow.napari_tools:ToTracksWidget
+    - id: lutuflow.table
+      title: Data table
+      python_name: lutuflow.napari_tools:TableWidget
+    - id: lutuflow.remove
+      title: Remove objects
+      python_name: lutuflow.napari_tools:RemoveObjectsWidget
+  widgets:
+    - command: lutuflow.start
+      display_name: OMERO interface
+    - command: lutuflow.skit
+      display_name: LuTuFlow
+    - command: lutuflow.picker
+      display_name: Color picker
+    - command: lutuflow.cropper
+      display_name: Manual cropping
+    - command: lutuflow.tracks
+      display_name: Convert to tracks
+    - command: lutuflow.table
+      display_name: Data table
+    - command: lutuflow.remove
+      display_name: Remove objects
+  sample_data:
+  - key: lung_ct
+    display_name: Mouse lung CT scan
+    uri: https://sandbox.zenodo.org/records/588733/files/ct_scan_example.tif
+  - key: roi_series
+    display_name: Lung ROI series (TZYX)
+    uri: https://sandbox.zenodo.org/records/588733/files/rois_timeseries_example.tif
+

@@ -17,7 +17,7 @@ from omero.gateway import (
     _ImageWrapper,
     _RoiWrapper,
 )
-from depalma_napari_omero.omero_client.omero_config import load_config, OmeroConfig
+from lutuflow.omero_client.omero_config import load_config, OmeroConfig
 
 
 def require_active_conn(func: Callable):
@@ -160,7 +160,7 @@ class OmeroClient:
     def import_image_to_ds(
         self, image: np.ndarray, project_id: int, dataset_id: int, image_name: str
     ) -> int:
-        cache_dir = pooch.os_cache("depalma-napari-omero")
+        cache_dir = pooch.os_cache("lutuflow")
         if not cache_dir.exists():
             os.makedirs(cache_dir)
 
@@ -173,7 +173,7 @@ class OmeroClient:
             file_name = Path(temp_file.name).with_name(
                 f"{Path(image_name).stem}.ome.tif"
             )
-            
+
             tifffile.imwrite(
                 file_name,
                 image,
@@ -245,7 +245,9 @@ class OmeroClient:
         if dataset_id is not None:
             return int(dataset_id)
         else:
-            raise RuntimeError(f"Could not post this dataset ({dataset_name=}) in project ID {project_id}.")
+            raise RuntimeError(
+                f"Could not post this dataset ({dataset_name=}) in project ID {project_id}."
+            )
 
     @require_active_conn
     def post_tag_by_name(self, project_id: int, tag_name: str) -> int:

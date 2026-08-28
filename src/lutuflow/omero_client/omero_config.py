@@ -13,7 +13,7 @@ class OmeroConfig:
 
 
 def get_config_path() -> Path:
-    config_dir = Path(user_config_dir("depalma_napari_omero"))
+    config_dir = Path(user_config_dir("lutuflow"))
     config_dir.mkdir(parents=True, exist_ok=True)
     return config_dir / "config.yaml"
 

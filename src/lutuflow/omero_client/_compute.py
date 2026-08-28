@@ -1,7 +1,7 @@
-from mousetumorpy import LungsPredictor, TumorPredictor
+from lutuflow.core import LungsPredictor, TumorPredictor
 
-from depalma_napari_omero.omero_client._client import OmeroClient
-from depalma_napari_omero.omero_client._tags_processor import TagsProcessor
+from lutuflow.omero_client._client import OmeroClient
+from lutuflow.omero_client._tags_processor import TagsProcessor
 
 
 def _compute_roi(
@@ -31,7 +31,9 @@ def _compute_roi(
     roi_tag_id = omero_client.create_tag(project_id, "roi")
     omero_client.tag_image_with_tag(posted_image_id, tag_id=roi_tag_id)
 
-    image_tags_list = TagsProcessor.get_image_tags(omero_client.get_image_tags(image_id))
+    image_tags_list = TagsProcessor.get_image_tags(
+        omero_client.get_image_tags(image_id)
+    )
 
     omero_client.copy_image_tags(
         src_image_id=image_id,

@@ -1,9 +1,9 @@
 from tqdm import tqdm
 
-from depalma_napari_omero.omero_client._client import OmeroClient
-from depalma_napari_omero.omero_client._view import ProjectDataView
-from depalma_napari_omero.omero_client._tags_processor import TagsProcessor
-from depalma_napari_omero.omero_client._context import ImageContext
+from lutuflow.omero_client._client import OmeroClient
+from lutuflow.omero_client._view import ProjectDataView
+from lutuflow.omero_client._tags_processor import TagsProcessor
+from lutuflow.omero_client._context import ImageContext
 
 
 class ProjectScanner:
@@ -52,34 +52,38 @@ class ProjectScanner:
                     pbar.update(1)
                     k += 1
                     yield k
-        
+
         self.view.print_summary()
 
     def upload_image(self, image_ctx: ImageContext, image_tag_id: int):
         if image_ctx.project_id is None:
             raise RuntimeError(f"Image upload needs a project ID!")
-        
+
         if image_ctx.image is None:
             raise RuntimeError(f"Image upload needs an image array!")
-        
+
         if image_ctx.image_name is None:
             raise RuntimeError(f"Image upload needs an image name!")
-        
+
         if image_ctx.time_tag is None:
             raise RuntimeError(f"Image upload needs a time tag!")
-            
+
         if image_ctx.specimen_tag is None:
             raise RuntimeError(f"Image upload needs a specimen tag!")
-        
+
         dataset_name = image_ctx.specimen_tag
         if dataset_name is None:
-            raise RuntimeError(f"Cannot upload an image in this dataset: {dataset_name}")
-        
+            raise RuntimeError(
+                f"Cannot upload an image in this dataset: {dataset_name}"
+            )
+
         if image_ctx.specimen_tag in self.view.cases:
             dataset_id = self.view.get_dataset_id(dataset_name)
         else:
-            dataset_id = self.omero_client.post_dataset(image_ctx.project_id, dataset_name)
-        
+            dataset_id = self.omero_client.post_dataset(
+                image_ctx.project_id, dataset_name
+            )
+
         image_ctx.dataset_id = dataset_id
         image_ctx.dataset_name = dataset_name
 
@@ -90,12 +94,16 @@ class ProjectScanner:
             image_ctx.dataset_id,
             image_ctx.image_name,
         )
-        
+
         image_ctx.image_id = posted_image_id
 
         # Tag the image appropriately
-        scan_time_tag_id = self.omero_client.create_tag(image_ctx.project_id, image_ctx.time_tag)
-        specimen_tag_id = self.omero_client.create_tag(image_ctx.project_id, image_ctx.specimen_tag)
+        scan_time_tag_id = self.omero_client.create_tag(
+            image_ctx.project_id, image_ctx.time_tag
+        )
+        specimen_tag_id = self.omero_client.create_tag(
+            image_ctx.project_id, image_ctx.specimen_tag
+        )
         project_tag_id = self.omero_client.create_tag(image_ctx.project_id, self.name)
 
         self.omero_client.tag_image_with_tag(posted_image_id, tag_id=image_tag_id)
@@ -122,7 +130,9 @@ class ProjectScanner:
                     specimen_tag = None
                 elif len(specimen_tags) >= 1:
                     if len(specimen_tags) > 1:
-                        print(f"Multiple specimen name tags found: {specimen_tags} among {image_tags} ({image_id=}). Will use: {specimen_tags[0]}")
+                        print(
+                            f"Multiple specimen name tags found: {specimen_tags} among {image_tags} ({image_id=}). Will use: {specimen_tags[0]}"
+                        )
                     specimen_tag = specimen_tags[0]
 
                 # Process time tags
@@ -132,7 +142,9 @@ class ProjectScanner:
                     time_tag = None
                 elif len(time_tags) >= 1:
                     if len(time_tags) > 1:
-                        print(f"Incoherent scan times: {time_tags} ({image_id=}). Will use: {time_tags[0]}.")
+                        print(
+                            f"Incoherent scan times: {time_tags} ({image_id=}). Will use: {time_tags[0]}."
+                        )
                     time_tag = time_tags[0]
                     time_idx = TagsProcessor.get_scan_time_idx(time_tag)
 

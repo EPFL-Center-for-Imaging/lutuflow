@@ -22,18 +22,19 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from mousetumorpy import NNUNET_MODELS, combine_images
+from lutuflow.core import NNUNET_MODELS, combine_images
 
-from depalma_napari_omero.omero_client._context import ImageContext
-from depalma_napari_omero.omero_client._project import (
+from lutuflow.omero_client._context import ImageContext
+from lutuflow.omero_client._project import (
     OmeroController,
     OmeroProjectManager,
 )
-from depalma_napari_omero.omero_client.omero_config import load_config, OmeroConfig
-from depalma_napari_omero.widgets._worker import WorkerManager
-from depalma_napari_omero.omero_client._scanner import ProjectScanner
-from depalma_napari_omero.omero_client._view import ProjectDataView
-from depalma_napari_omero.omero_client._tags_processor import TagsProcessor
+from lutuflow.omero_client.omero_config import load_config, OmeroConfig
+from lutuflow.omero_client._scanner import ProjectScanner
+from lutuflow.omero_client._view import ProjectDataView
+from lutuflow.omero_client._tags_processor import TagsProcessor
+
+from ._worker import WorkerManager
 
 
 class OMEROWidget(QWidget):
@@ -46,12 +47,12 @@ class OMEROWidget(QWidget):
         default_omero_cfg = load_config()
 
         ### Main layout ###
-        
+
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # type: ignore
 
         ### Tab 1: OMERO login ###
-        
+
         ### Login
         tab1_layout = QGridLayout()
         tab1_layout.setContentsMargins(10, 10, 10, 10)
@@ -100,7 +101,6 @@ class OMEROWidget(QWidget):
         login_btn.clicked.connect(self._login)
         tab1_layout.addWidget(login_btn, 5, 0, 1, 2)
 
-
         ### Tab 2: Data selection ###
 
         tab2_layout = QGridLayout()
@@ -141,7 +141,6 @@ class OMEROWidget(QWidget):
         self.btn_run_workflows.clicked.connect(self._run_all_workflows)  # type: ignore
         run_workflows_layout.addWidget(self.btn_run_workflows, 1, 0, 1, 2)
 
-
         # Scan data group
         scan_data_group = QCollapsibleGroupBox("Scan data")  # type: ignore
         scan_data_group.setChecked(False)
@@ -176,7 +175,7 @@ class OMEROWidget(QWidget):
         self.corrections_group.setChecked(False)
         self.corrections_group.toggled.connect(self.on_groupbox_toggled)
         corrections_layout = QGridLayout(self.corrections_group)
-                
+
         # Upload layer input
         self.cb_upload_corrected_data = QComboBox()
         corrections_layout.addWidget(QLabel("Corrected tumor data", self), 0, 0)
@@ -187,14 +186,14 @@ class OMEROWidget(QWidget):
         btn_upload_corrections.clicked.connect(self._upload_corrections)
         corrections_layout.addWidget(btn_upload_corrections, 1, 0, 1, 2)
         scan_data_layout.addWidget(self.corrections_group, 4, 0, 1, 2)
-        
+
         # Time series group
         self.timeseries_group = QCollapsibleGroupBox("Time series")  # type: ignore
         self.timeseries_group.setChecked(False)
         self.timeseries_group.toggled.connect(self.on_groupbox_toggled)
         timeseries_layout = QGridLayout(self.timeseries_group)
         scan_data_layout.addWidget(self.timeseries_group, 5, 0, 1, 2)
-        
+
         # Download ROIs timeseries
         timeseries_layout.addWidget(QLabel("Image series", self), 1, 0)
         self.btn_download_roi_series = QPushButton("⏬ (-)", self)
@@ -208,62 +207,60 @@ class OMEROWidget(QWidget):
         self.btn_download_tumor_series.setEnabled(False)
         self.btn_download_tumor_series.clicked.connect(self._download_ts_tumors)
         timeseries_layout.addWidget(self.btn_download_tumor_series, 3, 1, 1, 2)
-        
-        
+
         # New scan collapsible groupbox
         self.new_scan_group = QCollapsibleGroupBox("New scan")  # type: ignore
         self.new_scan_group.setChecked(False)
         self.new_scan_group.toggled.connect(self.on_groupbox_toggled)
         new_scan_layout = QGridLayout(self.new_scan_group)
         tab2_layout.addWidget(self.new_scan_group, 4, 0, 1, 3)
-        
+
         self.cb_new_scan_image = QComboBox()
         new_scan_layout.addWidget(QLabel("Image", self), 0, 0)
         new_scan_layout.addWidget(self.cb_new_scan_image, 0, 1)
-        
+
         self.new_scan_case = QLineEdit()
         self.new_scan_case.setText("C000000")
         new_scan_layout.addWidget(QLabel("Case", self), 1, 0)
         new_scan_layout.addWidget(self.new_scan_case, 1, 1)
-        
+
         self.cb_new_scan_time = QComboBox()
-        
+
         for k in range(4):
-            self.cb_new_scan_time.addItem(f"SCAN{k+1}", k+1)
-                   
+            self.cb_new_scan_time.addItem(f"SCAN{k+1}", k + 1)
+
         # self.cb_new_scan_time.addItems(['SCAN0', 'SCAN1', 'SCAN2', 'SCAN3'])
         new_scan_layout.addWidget(QLabel("Scan time", self), 2, 0)
         new_scan_layout.addWidget(self.cb_new_scan_time, 2, 1)
-        
+
         self.btn_new_scan = QPushButton("⬆️ Upload new scan", self)
         self.btn_new_scan.clicked.connect(self._upload_new_scan)  # type: ignore
         new_scan_layout.addWidget(self.btn_new_scan, 3, 0, 1, 2)
-        
-        
+
         # Other operations group
         other_ops_group = QCollapsibleGroupBox("Other operations")  # type: ignore
         other_ops_group.setChecked(False)
         other_ops_group.toggled.connect(self.on_groupbox_toggled)
         other_ops_layout = QGridLayout(other_ops_group)
         tab2_layout.addWidget(other_ops_group, 5, 0, 1, 3)
-        
+
         # Upload new scans
         self.btn_upload_scans = QPushButton("⬆️ Upload new scans in batch", self)
         self.btn_upload_scans.clicked.connect(self._upload_new_scans)  # type: ignore
         other_ops_layout.addWidget(self.btn_upload_scans, 0, 0)
-        
+
         # Download experiment
         self.btn_download_experiments = QPushButton("⬇️ Download project locally", self)
         self.btn_download_experiments.clicked.connect(self._download_experiment)
         other_ops_layout.addWidget(self.btn_download_experiments, 1, 0)
-        
+
         # Download / upload (generic)
         self.generic_upload_group = QCollapsibleGroupBox("Download / upload")  # type: ignore
         self.generic_upload_group.setChecked(False)
         self.generic_upload_group.toggled.connect(self.on_groupbox_toggled)
         generic_upload_layout = QGridLayout(self.generic_upload_group)
         other_ops_layout.addWidget(self.generic_upload_group, 2, 0)
-        
+
         self.cb_dataset = QComboBox()
         self.cb_dataset.currentTextChanged.connect(self._on_dataset_change)
         generic_upload_layout.addWidget(QLabel("Dataset", self), 0, 0)
@@ -282,7 +279,6 @@ class OMEROWidget(QWidget):
         btn_upload_generic = QPushButton("⏫ Upload", self)
         btn_upload_generic.clicked.connect(self._generic_upload)
         generic_upload_layout.addWidget(btn_upload_generic, 2, 2)
-
 
         ### Tabs
         tab1 = QWidget(self)
@@ -346,7 +342,7 @@ class OMEROWidget(QWidget):
             if isinstance(x, Labels):
                 if len(x.data.shape) == 3:
                     self.cb_upload_corrected_data.addItem(x.name, x.data)
-        
+
         self.cb_new_scan_image.clear()
         for x in self.viewer.layers:
             if isinstance(x, Image):
@@ -658,7 +654,7 @@ class OMEROWidget(QWidget):
             if layer_data is None:
                 show_warning(f"No data found in the layer ({layer_name}).")
                 return
-            
+
             updated_data = layer_data.astype(np.uint8)
         else:
             updated_data = layer.data
@@ -833,23 +829,23 @@ class OMEROWidget(QWidget):
                 n_datasets_to_upload = len(subfolders)
                 worker = self._upload_new_scans_worker(parent_dir)  # type: ignore
                 self.worker_manager.add_active(worker, max_iter=n_datasets_to_upload)
-    
+
     @thread_worker
     def _upload_new_scan_worker(self, image_ctx: ImageContext):
         if self.project is None:
             return
-        
+
         self.project.scanner.upload_image(image_ctx, self.project.image_tag_id)
-        
+
     def _upload_new_scan(self, *args, **kwargs):
         if self.project is None:
             return
-        
+
         if self.cb_new_scan_image.currentText() == "":
             return
-        
+
         image = self.cb_new_scan_image.currentData()
-        
+
         specimen = self.new_scan_case.text()
         specimen_tags = TagsProcessor.get_specimen_tags(tags=[specimen])
         if len(specimen_tags) == 0:
@@ -857,10 +853,10 @@ class OMEROWidget(QWidget):
             return
 
         specimen_name = specimen_tags[0]
-        
+
         scan_time = self.cb_new_scan_time.currentText()
         time_idx = self.cb_new_scan_time.currentData()
-        
+
         image_ctx = ImageContext(
             image_class="image",
             image=image,
@@ -870,11 +866,11 @@ class OMEROWidget(QWidget):
             project_id=self.project.id,
             image_name=f"{specimen_name}_{scan_time}",
         )
-        
+
         # Maybe do this in a thread worker?
         worker = self._upload_new_scan_worker(image_ctx)  # type: ignore
         self.worker_manager.add_active(worker)
-        
+
     @thread_worker
     def _download_experiment_worker(self, save_dir: str):
         if self.project is None:
