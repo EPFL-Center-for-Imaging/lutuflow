@@ -133,3 +133,7 @@ AGENTS.md
 CLAUDE.md
 .claude/
 summary.md
+
+pyapp/requirements.linux.txt
+pyapp/requirements.windows.txt
+pyapp/requirements.macos.txt

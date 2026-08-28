@@ -19,19 +19,50 @@ os.environ["PYAPP_EXEC_SCRIPT"] = str(
     (script_directory.parent / "src" / __name__ / "__main__.py").resolve()
 )
 
+def build_local_wheel() -> Path:
+    """Build a wheel from the local checkout so it can be installed without
+    needing this version to be published on PyPI."""
+    dist_dir = script_directory.parent / "dist"
+    if dist_dir.exists():
+        shutil.rmtree(dist_dir)
+    subprocess.run(
+        ["python", "-m", "build", "--wheel", str(script_directory.parent)],
+        check=True,
+    )
+    wheels = list(dist_dir.glob("*.whl"))
+    if len(wheels) != 1:
+        raise RuntimeError(f"Expected exactly one wheel in {dist_dir}, found {wheels}")
+    return wheels[0].resolve()
+
+
+def render_requirements(template_name: str, rendered_name: str, wheel_path: Path) -> str:
+    template_path = script_directory / template_name
+    rendered_path = script_directory / rendered_name
+    content = template_path.read_text()
+    content = content.replace(
+        "lutuflow[napari]==${PYAPP_PROJECT_VERSION}",
+        f"lutuflow[napari] @ file://{wheel_path.as_posix()}",
+    )
+    rendered_path.write_text(content)
+    return str(rendered_path.resolve())
+
+
+local_wheel = build_local_wheel()
+
+
 if os.name == "nt":
     print("Building for Windows.")
     extension = ".exe"  # Windows
     platform = "w64"
-    os.environ["PYAPP_PROJECT_DEPENDENCY_FILE"] = str(
-        (script_directory / "requirements.template-windows.txt").resolve()
+    os.environ["PYAPP_PROJECT_DEPENDENCY_FILE"] = render_requirements(
+        "requirements.template-windows.txt", "requirements.windows.txt", local_wheel
     )
 else:
     print("Building for Linux / MacOS.")
     extension = ""  # Linux and MacOS
     platform = "u64"
-    os.environ["PYAPP_PROJECT_DEPENDENCY_FILE"] = str(
-        (script_directory / "requirements.template-linux.txt").resolve()
+    os.environ["PYAPP_PROJECT_DEPENDENCY_FILE"] = render_requirements(
+        "requirements.template-linux.txt", "requirements.linux.txt", local_wheel
     )
 
 # Print them
@@ -43,7 +74,7 @@ print(f"{os.environ['PYAPP_PROJECT_DEPENDENCY_FILE']=}")
 
 # Change directory and run cargo build
 os.chdir(str(script_directory / "pyapp-latest"))
-subprocess.run(["cargo", "build", "--release"], capture_output=True, text=True)
+subprocess.run(["cargo", "build", "--release"], check=True)
 os.chdir(str(script_directory))
 
 source_path = str(
