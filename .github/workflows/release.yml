@@ -37,10 +37,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     env:
-      PYAPP_PROJECT_NAME: 'depalma_napari_omero'
+      PYAPP_PROJECT_NAME: 'lutuflow'
 
     steps:
       - name: Checkout code
@@ -66,6 +66,8 @@ jobs:
             sed "s/\${PYAPP_PROJECT_VERSION}/$VERSION/" pyapp/requirements.template-windows.txt > pyapp/requirements.windows.txt
           elif [ "${{ matrix.os }}" == "macos-latest" ]; then
             sed "s/\${PYAPP_PROJECT_VERSION}/$VERSION/" pyapp/requirements.template-macos.txt > pyapp/requirements.macos.txt
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            sed "s/\${PYAPP_PROJECT_VERSION}/$VERSION/" pyapp/requirements.template-linux.txt > pyapp/requirements.linux.txt
           fi
 
       - name: Set environment variable for requirements.txt
@@ -75,6 +77,8 @@ jobs:
             echo "PYAPP_PROJECT_DEPENDENCY_FILE=$(pwd)/requirements.windows.txt" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "macos-latest" ]; then
             echo "PYAPP_PROJECT_DEPENDENCY_FILE=$(pwd)/requirements.macos.txt" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            echo "PYAPP_PROJECT_DEPENDENCY_FILE=$(pwd)/requirements.linux.txt" >> $GITHUB_ENV
           fi
         working-directory: pyapp
       
@@ -97,6 +101,10 @@ jobs:
             EXECUTABLE_NAME=${{ env.PYAPP_PROJECT_NAME }}_${{ runner.os }}_${{ env.VERSION }}
             mv pyapp $EXECUTABLE_NAME
             tar -czvf ../../../../executable-macos.tar.gz $EXECUTABLE_NAME
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            EXECUTABLE_NAME=${{ env.PYAPP_PROJECT_NAME }}_${{ runner.os }}_${{ env.VERSION }}
+            mv pyapp $EXECUTABLE_NAME
+            tar -czvf ../../../../executable-linux.tar.gz $EXECUTABLE_NAME
           fi
 
       - name: Upload artifact
@@ -122,6 +130,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: executable-macOS
+          path: .
+      
+      - name: Download Ubuntu artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: executable-linux
           path: .
 
       - name: Create Release
@@ -153,4 +167,14 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./executable-macos.tar.gz
           asset_name: executable-macos.tar.gz
+          asset_content_type: application/gzip
+      
+      - name: Upload Ubuntu executable to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./executable-linux.tar.gz
+          asset_name: executable-linux.tar.gz
           asset_content_type: application/gzip
